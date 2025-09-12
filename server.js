@@ -6,7 +6,7 @@ const { authenticateJWT } = require('./auth.js');
 const bcrypt = require('bcrypt');
 const { z } = require('zod');
 const path = require('path');
-const axios = require('axios'); // Added for proxying to Flask
+const axios = require('axios');
 
 // Destructure env vars (undefined in Vercel if not set)
 const JWT_SECRETE = process.env.JWT_SECRETE;
@@ -168,9 +168,10 @@ app.post('/api/signin', async (req, res) => {
     }
 });
 
-// Magnetism questions endpoint (unchanged)
-app.post('/api/topic/magnetism', authenticateJWT, async (req, res) => {
-    const { xp, isCorrect, brains, questionId, userAnswer } = req.body;
+// Dynamic topic questions endpoint
+app.post('/api/topic/:topic', authenticateJWT, async (req, res) => {
+    const { xp, isCorrect, brains, questionId, userAnswer, questionNumber = 0 } = req.body;
+    const topic = req.params.topic.toLowerCase();
 
     try {
         // Validate input data
@@ -179,7 +180,8 @@ app.post('/api/topic/magnetism', authenticateJWT, async (req, res) => {
             isCorrect: z.boolean().nullable(),
             brains: z.number().optional(),
             questionId: z.string().optional().nullable(),
-            userAnswer: z.string().optional().nullable()
+            userAnswer: z.string().optional().nullable(),
+            questionNumber: z.number().min(0).optional()
         });
 
         const parsed = progressValidation.safeParse(req.body);
@@ -200,18 +202,35 @@ app.post('/api/topic/magnetism', authenticateJWT, async (req, res) => {
                 isCorrect,
                 brains,
                 userAnswer,
+                topic
             });
         }
 
-        // Fetch a random question
-        const questions = await Question.find({ topic: 'magnetism' });
+        // Fetch questions for the topic
+        const questions = await Question.find({ topic });
         if (!questions.length) {
-            return res.status(404).json({ errors: [{ path: 'questions', message: 'No questions available' }] });
+            return res.status(404).json({ errors: [{ path: 'questions', message: 'No questions available for this topic' }] });
         }
 
-        // Simple randomization (can improve with history tracking)
-        const randomIndex = Math.floor(Math.random() * questions.length);
-        const question = questions[randomIndex];
+        // Track completed questions for this session (simple in-memory for demo; use DB for persistence)
+        const totalQuestions = 10;
+        if (questionNumber >= totalQuestions) {
+            return res.json({
+                completed: true,
+                message: 'Congratulations!',
+                totalXp: xp || 0
+            });
+        }
+
+        // Filter out previously answered questions (basic approach; improve with DB tracking)
+        const answeredQuestions = await Progress.find({ userId: req.userId, topic }).distinct('questionId');
+        let availableQuestions = questions.filter(q => !answeredQuestions.includes(q.id));
+        if (availableQuestions.length === 0) {
+            availableQuestions = questions; // Reset if all answered, for demo simplicity
+        }
+
+        const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+        const question = availableQuestions[randomIndex];
 
         // Format response to match frontend expectations
         const responseQuestion = {
@@ -261,57 +280,51 @@ app.post('/api/chat', authenticateJWT, async (req, res) => {
 
 // Initialize questions (run once or on startup if collection is empty)
 async function initializeQuestions() {
-    const count = await Question.countDocuments({ topic: 'magnetism' });
-    if (count === 0) {
-        const initialQuestions = [
-            {
-                id: 'q1',
-                type: 'fill-in-the-blanks',
-                prompt: 'A magnet has two poles: the _____ pole and the south pole.',
-                correctAnswer: 'north',
-                feedback: 'Magnets always have a north and south pole. Like poles repel, and unlike poles attract.',
-                topic: 'magnetism'
-            },
-            {
-                id: 'q2',
-                type: 'multiple-choice',
-                prompt: 'What happens when two north poles of magnets are brought close together?',
-                options: [
-                    { value: 'They attract' },
-                    { value: 'They repel' },
-                    { value: 'They become neutral' },
-                    { value: 'They create a spark' }
-                ],
-                correctAnswer: 'They repel',
-                feedback: 'Like poles of magnets (e.g., north-north) repel each other due to their magnetic fields.',
-                topic: 'magnetism'
-            },
-            {
-                id: 'q4',
-                type: 'fill-in-the-blanks',
-                prompt: 'An electromagnet is created by passing an electric current through a coil of _____.',
-                correctAnswer: 'wire',
-                feedback: 'An electromagnet is made by wrapping a coil of wire around a magnetic core and passing current through it.',
-                topic: 'magnetism'
-            },
-            {
-                id: 'q5',
-                type: 'multiple-choice',
-                prompt: 'Which material is most likely to be attracted to a magnet?',
-                options: [
-                    { value: 'Wood' },
-                    { value: 'Iron' },
-                    { value: 'Plastic' },
-                    { value: 'Glass' }
-                ],
-                correctAnswer: 'Iron',
-                feedback: 'Iron is a ferromagnetic material, strongly attracted to magnets, unlike wood, plastic, or glass.',
-                topic: 'magnetism'
-            }
-        ];
-
-        await Question.insertMany(initialQuestions);
-        console.log('Initialized magnetism questions');
+    const topics = ['magnetism', 'electricity', 'waves', 'optics', 'thermodynamics', 'biology', 'genetics', 'evolution', 'chemistry', 'organic chemistry', 'algebra', 'geometry', 'trigonometry', 'calculus', 'probability', 'history', 'geography', 'civics', 'economics', 'philosophy'];
+    
+    // Topic-specific question templates
+    const topicTemplates = {
+        magnetism: [
+            { type: 'fill-in-the-blanks', prompt: 'A magnet has two poles: the _____ pole and the south pole.', correctAnswer: 'north', feedback: 'Magnets always have a north and south pole. Like poles repel, and unlike poles attract.' },
+            { type: 'multiple-choice', prompt: 'What happens when two north poles of magnets are brought close together?', options: ["They attract", "They repel", "They become neutral", "They create a spark"], correctAnswer: "They repel", feedback: 'Like poles repel each other due to magnetic fields.' },
+            { type: 'fill-in-the-blanks', prompt: 'An electromagnet is created by passing an electric current through a coil of _____.', correctAnswer: 'wire', feedback: 'Wrapping wire around a core and passing current creates an electromagnet.' },
+            { type: 'multiple-choice', prompt: 'Which material is most likely to be attracted to a magnet?', options: ["Wood", "Iron", "Plastic", "Glass"], correctAnswer: "Iron", feedback: 'Iron is ferromagnetic and strongly attracted to magnets.' },
+            { type: 'fill-in-the-blanks', prompt: 'The study of magnetism involves understanding _____ fields.', correctAnswer: 'magnetic', feedback: 'Magnetic fields are invisible forces around magnets.' },
+            { type: 'multiple-choice', prompt: 'What is the unit of magnetic field strength?', options: ["Volt", "Tesla", "Ampere", "Ohm"], correctAnswer: "Tesla", feedback: 'Tesla (T) measures magnetic flux density.' },
+            { type: 'fill-in-the-blanks', prompt: 'A compass needle aligns with the Earth\'s _____ field.', correctAnswer: 'magnetic', feedback: 'The Earth acts like a giant bar magnet.' },
+            { type: 'multiple-choice', prompt: 'Which device uses magnetism to store data?', options: ["Capacitor", "Hard Drive", "Resistor", "Diode"], correctAnswer: "Hard Drive", feedback: 'Hard drives use magnetic platters for data storage.' },
+            { type: 'fill-in-the-blanks', prompt: 'The force between magnets decreases with _____ distance.', correctAnswer: 'increasing', feedback: 'Magnetic force follows an inverse-square law.' },
+            { type: 'multiple-choice', prompt: 'What material can block magnetic fields?', options: ["Copper", "Iron", "Mu-metal", "Aluminum"], correctAnswer: "Mu-metal", feedback: 'Mu-metal is a nickel-iron alloy used for magnetic shielding.' }
+        ],
+        electricity: [
+            { type: 'fill-in-the-blanks', prompt: 'Electric current is the flow of _____.', correctAnswer: 'electrons', feedback: 'Electrons are negatively charged particles that carry current.' },
+            { type: 'multiple-choice', prompt: 'What is Ohm\'s Law?', options: ["V = IR", "P = VI", "I = VR", "R = VI"], correctAnswer: "V = IR", feedback: 'Voltage (V) equals current (I) times resistance (R).' },
+            { type: 'fill-in-the-blanks', prompt: 'A material that allows electric current to flow easily is called a _____.', correctAnswer: 'conductor', feedback: 'Metals like copper are good conductors.' },
+            { type: 'multiple-choice', prompt: 'What unit measures electric current?', options: ["Volt", "Ampere", "Ohm", "Watt"], correctAnswer: "Ampere", feedback: 'Ampere (A) is the SI unit for current.' },
+            { type: 'fill-in-the-blanks', prompt: 'The opposition to current flow in a circuit is called _____.', correctAnswer: 'resistance', feedback: 'Measured in ohms (Ω).' },
+            { type: 'multiple-choice', prompt: 'What device converts electrical energy to light?', options: ["Motor", "Battery", "Bulb", "Switch"], correctAnswer: "Bulb", feedback: 'An electric bulb uses filament to produce light.' },
+            { type: 'fill-in-the-blanks', prompt: 'A complete path for current to flow is called a closed _____.', correctAnswer: 'circuit', feedback: 'Open circuits break the flow of current.' },
+            { type: 'multiple-choice', prompt: 'What causes a short circuit?', options: ["High resistance", "Direct connection between power source", "Broken wire", "Insulator"], correctAnswer: "Direct connection between power source", feedback: 'Bypassing components causes excessive current.' },
+            { type: 'fill-in-the-blanks', prompt: 'Electric power is measured in _____.', correctAnswer: 'watts', feedback: 'Power = Voltage × Current (P = VI).' },
+            { type: 'multiple-choice', prompt: 'Which is a source of electricity?', options: ["Resistor", "Battery", "Wire", "Switch"], correctAnswer: "Battery", feedback: 'Batteries store chemical energy as electrical energy.' }
+        ]
+    };
+    
+    for (const topic of topics) {
+        const count = await Question.countDocuments({ topic });
+        if (count === 0) {
+            const initialQuestions = topicTemplates[topic].map((q, index) => ({
+                id: `${topic}-q${index + 1}`,
+                type: q.type,
+                prompt: q.prompt,
+                options: q.options ? q.options.map(opt => ({ value: opt })) : undefined,
+                correctAnswer: q.correctAnswer,
+                feedback: q.feedback,
+                topic
+            }));
+            await Question.insertMany(initialQuestions);
+            console.log(`Initialized ${topic} questions`);
+        }
     }
 }
 
