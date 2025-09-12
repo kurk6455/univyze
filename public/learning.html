@@ -254,7 +254,7 @@
             <div class="xp-bar-inner" id="xp-bar"></div>
         </div>
         <div class="brains" id="brains">🧠🧠🧠🧠🧠</div>
-        <div class="question-counter" id="questionCounter">1/10</div>
+        <div class="question-counter" id="questionCounter">1/3</div>
 
         <h2 id="question">Loading...</h2>
 
@@ -304,7 +304,7 @@
                 let currentQuestion = null;
                 let selectedOptions = [];
                 let questionCount = 0;  // Tracks completed questions
-                const totalQuestions = 10;
+                const totalQuestions = 3;  // Updated to 3 questions
 
                 const brainsDiv = document.getElementById("brains");
                 const questionElem = document.getElementById("question");
@@ -650,7 +650,7 @@
                 // Initialize
                 updateBrains();
                 updateXp();
-                updateQuestionCounter();  // Initial: 1/10
+                updateQuestionCounter();  // Initial: 1/3
                 fetchNextQuestion(null, null);
             })();
         });
