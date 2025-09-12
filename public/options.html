@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>options</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+  <div class="bg-white shadow-lg rounded-xl p-6 w-full max-w-lg">
+    <!-- Search Bar -->
+    <input 
+      id="searchInput"
+      type="text" 
+      placeholder="🔍 Search topics..." 
+      class="w-full p-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-indigo-400"
+    />
+
+    <!-- Topics -->
+    <div id="topicsContainer" class="mt-4 flex flex-wrap gap-2 max-h-72 overflow-y-auto">
+      <!-- Topic buttons will load here -->
+    </div>
+
+    <!-- Download Message -->
+    <div id="downloadMessage" class="mt-4 text-center text-green-600 hidden"></div>
+
+    <!-- Reset -->
+    <div class="mt-4 text-center">
+      <button 
+        onclick="resetSearch()" 
+        class="text-sm text-gray-500 hover:text-red-500"
+      >
+        ⟳ Reset
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const topics = [
+      "Magnetism", "Electricity", "Waves", "Optics", "Thermodynamics",
+      "Biology", "Genetics", "Evolution", "Chemistry", "Organic Chemistry",
+      "Algebra", "Geometry", "Trigonometry", "Calculus", "Probability",
+      "History", "Geography", "Civics", "Economics", "Philosophy"
+    ];
+
+    const container = document.getElementById("topicsContainer");
+    const searchInput = document.getElementById("searchInput");
+    const downloadMessage = document.getElementById("downloadMessage");
+
+    function renderTopics(filter = "") {
+      container.innerHTML = "";
+      topics
+        .filter(t => t.toLowerCase().includes(filter.toLowerCase()))
+        .forEach(topic => {
+          const btn = document.createElement("button");
+          btn.innerText = topic;
+          btn.className = "px-4 py-2 rounded-full text-sm";
+          if (topic === "Magnetism") {
+            btn.className += " bg-green-500 text-white";
+            btn.onclick = () => {
+              window.location.href = "/learning.html";
+            };
+          } else {
+            btn.className += " bg-gray-200";
+            btn.onclick = () => {
+              if (btn.className.includes("bg-red-200")) {
+                btn.className = btn.className.replace("bg-red-200", "bg-gray-200");
+                downloadMessage.innerText = "Removed from download queue: " + topic;
+                downloadMessage.classList.remove("hidden");
+                setTimeout(() => downloadMessage.classList.add("hidden"), 2000);
+              } else {
+                btn.className = btn.className.replace("bg-gray-200", "bg-red-200");
+                downloadMessage.innerText = "Staged for downloading: " + topic;
+                downloadMessage.classList.remove("hidden");
+                setTimeout(() => downloadMessage.classList.add("hidden"), 2000);
+                axios.post('/api/topic', { topic: topic })
+                  .then(response => console.log(response.data))
+                  .catch(error => console.error('Error:', error));
+              }
+            };
+          }
+          container.appendChild(btn);
+        });
+    }
+
+    function resetSearch() {
+      searchInput.value = "";
+      downloadMessage.classList.add("hidden");
+      renderTopics();
+    }
+
+    // initial load
+    renderTopics();
+  </script>
+
+</body>
+</html>

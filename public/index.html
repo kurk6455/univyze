@@ -663,7 +663,7 @@
                 });
             });
 
-            // Fixed: Route Get Started to learning.html
+            // Route Get Started to signin.html, then to options.html after login
             const getStartedBtn = document.getElementById('getStartedBtn');
             getStartedBtn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -671,12 +671,13 @@
                 if (!token) {
                     alert('Please log in first!');
                     window.location.href = './signin.html';
+                    // After sign-in, redirect to options.html (handled in signin.html)
                     return;
                 }
-                window.location.href = './learning.html';
+                window.location.href = './options.html';
             });
 
-            // Fixed: Route Counselling to counselling.html
+            // Route Counselling to counselling.html
             const counsellingBtn = document.getElementById('counsellingBtn');
             counsellingBtn.addEventListener('click', (e) => {
                 e.preventDefault();
