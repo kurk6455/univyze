@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading...</title>
+  <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.2/dist/dotlottie-wc.js" type="module"></script>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      background-image: url('https://www.shutterstock.com/image-vector/vector-illustration-background-italian-countryside-600nw-1415531915.jpg');
+        background-size: cover;
+      font-family: 'Poppins', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+    .wave {
+      position: absolute;
+      width: 200%;
+      height: 200px;
+      left: -50%;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 100%;
+      animation: waveMove 8s ease-in-out infinite alternate;
+    }
+    .wave:nth-child(2) {
+      bottom: 40px;
+      animation-duration: 10s;
+      opacity: 0.5;
+    }
+    @keyframes waveMove {
+      from { transform: translateX(0); }
+      to { transform: translateX(50px); }
+    }
+
+    .loader-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(15px);
+      animation: float 3s ease-in-out infinite;
+      z-index: 2;
+    }
+
+    dotlottie-wc {
+      width: 220px;
+      height: 220px;
+      filter: drop-shadow(0px 0px 16px rgba(255,255,255,0.8));
+    }
+
+    .caption {
+      margin-top: 18px;
+      font-size: 1.7rem;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 1px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      color: #fff;
+      text-shadow: 0 0 8px #2563eb, 0 0 15px #06b6d4;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 6px #2563eb, 0 0 12px #06b6d4; }
+      to { text-shadow: 0 0 15px #38bdf8, 0 0 25px #06b6d4; }
+    }
+
+    .sub-caption {
+      margin-top: 12px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: black;
+      text-align: center;
+      min-height: 1.5em;
+      animation: fadeInOut 6s ease-in-out infinite;
+    }
+    @keyframes fadeInOut {
+      0%, 20% { opacity: 0; transform: translateY(10px); }
+      40%, 60% { opacity: 1; transform: translateY(0); }
+      80%, 100% { opacity: 0; transform: translateY(-10px); }
+    }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-12px); }
+      100% { transform: translateY(0px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wave"></div>
+  <div class="wave"></div>
+
+  <div class="loader-container">
+    <dotlottie-wc 
+      src="https://lottie.host/9524b27e-0cec-4bcb-ae66-19f76b6f2db7/SsIXNqrDTX.lottie"
+      autoplay
+      loop
+      speed="1">
+    </dotlottie-wc>
+
+    <div class="caption">
+      🌟 Near to your success… Let’s check that! 🚀
+    </div>
+
+    <div class="sub-caption" id="quoteBox">
+      📘 Learning today, leading tomorrow!
+    </div>
+  </div>
+
+  <script>
+    const quotes = [
+      "📘 Learning today, leading tomorrow!",
+      "🚀 Every step brings you closer to success!",
+      "🔥 Believe in yourself, you got this!",
+      "🎯 Focus now, shine later!",
+      "💡 Education is the key to your future!"
+    ];
+
+    let index = 0;
+    const quoteBox = document.getElementById("quoteBox");
+
+    setInterval(() => {
+      index = (index + 1) % quotes.length;
+      quoteBox.innerHTML = quotes[index];
+    }, 6000);
+  </script>
+</body>
+</html>

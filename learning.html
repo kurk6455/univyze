@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Magnetism Quiz</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            background-color: #15202b;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            color: white;
+        }
+
+        .container {
+            background-color: #192734;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .xp-bar {
+            height: 6px;
+            background-color: #2c3e50;
+            border-radius: 3px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .xp-bar-inner {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .brains {
+            float: right;
+            font-size: 1.2rem;
+            color: #e0245e;
+            margin-bottom: 1rem;
+            text-align: right;
+        }
+
+        h2 {
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .quiz-section {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .question-display {
+            background-color: #253341;
+            border-radius: 12px;
+            width: 140px;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .answers {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            min-width: 150px;
+        }
+
+        .answer-option {
+            background-color: #253341;
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 1.1rem;
+            border: 2px solid transparent;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .answer-option:hover {
+            background-color: #34495e;
+        }
+
+        .answer-option.selected {
+            background-color: #2ecc71;
+            border-color: #27ae60;
+            color: black;
+        }
+
+        .answer-option.correct {
+            background-color: #27ae60;
+            border-color: #2ecc71;
+            color: black;
+        }
+
+        .answer-option.incorrect {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            color: white;
+        }
+
+        .answer-option img {
+            max-width: 100px;
+            height: auto;
+            margin-right: 0.5rem;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            background-color: #253341;
+            color: #ccc;
+            border: none;
+            padding: 0.8rem 1.4rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            flex: 1;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #2ecc71;
+            color: black;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(21, 32, 43, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            color: white;
+            font-weight: 600;
+            font-size: 1.2rem;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .popup {
+            background-color: #253341;
+            padding: 1.5rem 2rem;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 90%;
+        }
+
+        .popup button {
+            background-color: #3a81f1;
+            color: white;
+            font-weight: 700;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.8rem;
+        }
+
+        /* 📱 Mobile optimization */
+        @media (max-width: 480px) {
+            .question-display {
+                width: 120px;
+                height: 130px;
+                font-size: 4rem;
+            }
+
+            .answers .answer-option {
+                font-size: 1rem;
+                padding: 0.6rem 0.8rem;
+            }
+
+            h2 {
+                font-size: 1.1rem;
+            }
+
+            .buttons button {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="xp-bar" aria-label="xp bar">
+            <div class="xp-bar-inner" id="xp-bar"></div>
+        </div>
+        <div class="brains" id="brains">🧠🧠🧠🧠🧠</div>
+
+        <h2 id="question">Loading...</h2>
+
+        <div class="quiz-section" id="quiz-section">
+            <div class="question-display" id="question-display">
+                <!-- No sound button needed for magnetism -->
+            </div>
+
+            <div class="answers" id="answers">
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button id="skipBtn">Skip</button>
+            <button id="submitBtn" disabled>Submit</button>
+        </div>
+
+        <div class="message" id="feedbackMessage"></div>
+    </div>
+
+    <div class="popup-overlay" id="brainsPopup" style="display:none;">
+        <div class="popup">
+            <p>You ran out of brains. Have a free refill on us to keep going!</p>
+            <button id="refillBtn">Refill For Free</button>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="loading" style="display:none;">
+        <div class="popup">
+            <p>Loading next question...</p>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = '/api/questions/magnetism'; // Replace with your actual backend endpoint
+        const brainsMax = 5;
+        let brains = brainsMax;
+        let xp = 0;
+        let currentQuestion = null;
+        let selectedOptions = [];
+
+        const brainsDiv = document.getElementById("brains");
+        const questionElem = document.getElementById("question");
+        const quizSection = document.getElementById("quiz-section");
+        const questionDisplay = document.getElementById("question-display");
+        const answersDiv = document.getElementById("answers");
+        const submitBtn = document.getElementById("submitBtn");
+        const skipBtn = document.getElementById("skipBtn");
+        const feedbackMessage = document.getElementById("feedbackMessage");
+        const xpBar = document.getElementById("xp-bar");
+        const brainsPopup = document.getElementById("brainsPopup");
+        const refillBtn = document.getElementById("refillBtn");
+        const loadingOverlay = document.getElementById("loading");
+
+        function updateBrains() {
+            brainsDiv.textContent = "🧠".repeat(brains) + "🤍".repeat(brainsMax - brains);
+        }
+
+        function updateXp() {
+            const width = Math.min((xp / 100) * 100, 100); // Adjust max XP as needed
+            xpBar.style.width = `${width}%`;
+        }
+
+        function loadQuestion(q) {
+            feedbackMessage.textContent = "";
+            submitBtn.disabled = true;
+            selectedOptions = [];
+            questionDisplay.style.display = 'none';
+            answersDiv.style.display = '';
+            quizSection.style.display = 'flex';
+
+            const type = q.type;
+
+            if (type === 'fill-in-the-blanks') {
+                questionElem.innerHTML = q.prompt.replace('_____', '<input type="text" id="fillInput" autocomplete="off">');
+                quizSection.style.display = 'none';
+
+                const input = document.getElementById('fillInput');
+                input.focus();
+                input.addEventListener('input', () => {
+                    submitBtn.disabled = input.value.trim() === '';
+                });
+            } else {
+                questionElem.textContent = q.prompt;
+                answersDiv.innerHTML = "";
+
+                q.options.forEach((opt, index) => {
+                    const div = document.createElement("div");
+                    div.className = "answer-option";
+                    div.tabIndex = 0;
+
+                    if (type === 'visual') {
+                        const img = document.createElement("img");
+                        img.src = opt.imageUrl;
+                        img.alt = opt.description;
+                        div.appendChild(img);
+                        const span = document.createElement("span");
+                        span.textContent = opt.value;
+                        div.appendChild(span);
+                    } else {
+                        div.textContent = opt;
+                    }
+
+                    div.addEventListener("click", () => {
+                        Array.from(answersDiv.children).forEach(child => child.classList.remove("selected"));
+                        div.classList.add("selected");
+                        selectedOptions = [index];
+                        submitBtn.disabled = false;
+                    });
+
+                    div.addEventListener("keydown", (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            div.click();
+                        }
+                    });
+
+                    answersDiv.appendChild(div);
+                });
+            }
+
+            submitBtn.disabled = true;
+            skipBtn.disabled = false;
+        }
+
+        async function fetchNextQuestion(isCorrect = null, userAnswer = null) {
+            loadingOverlay.style.display = 'flex';
+            submitBtn.disabled = true;
+            skipBtn.disabled = true;
+            feedbackMessage.textContent = "";
+
+            try {
+                // Send progress data to backend
+                const progressData = {
+                    xp: xp,
+                    isCorrect: isCorrect,
+                    brains: brains,
+                    questionId: currentQuestion ? currentQuestion.id : null,
+                    userAnswer: userAnswer
+                };
+
+                const response = await axios.post(apiUrl, progressData);
+                currentQuestion = response.data; // Assume backend returns a single question object
+                loadQuestion(currentQuestion);
+            } catch (error) {
+                feedbackMessage.textContent = "Error loading question. Try again.";
+                console.error(error);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        function checkAnswer() {
+            submitBtn.disabled = true;
+            skipBtn.disabled = true;
+            const type = currentQuestion.type;
+            let isCorrect = false;
+            let userAnswer = null;
+
+            if (type === 'fill-in-the-blanks') {
+                const input = document.getElementById('fillInput');
+                userAnswer = input.value.trim().toLowerCase();
+                const correct = currentQuestion.correctAnswer.toLowerCase();
+                isCorrect = userAnswer === correct;
+
+                if (isCorrect) {
+                    input.style.border = '2px solid #27ae60';
+                    feedbackMessage.style.color = "#27ae60";
+                } else {
+                    input.style.border = '2px solid #e74c3c';
+                    feedbackMessage.style.color = "#e74c3c";
+                }
+            } else {
+                const selectedIdx = selectedOptions[0];
+                userAnswer = selectedIdx !== undefined ? currentQuestion.options[selectedIdx] : null;
+                let correctIdx;
+                if (type === 'visual') {
+                    correctIdx = currentQuestion.options.findIndex(opt => opt.value === currentQuestion.correctAnswer);
+                } else {
+                    correctIdx = currentQuestion.options.findIndex(opt => opt === currentQuestion.correctAnswer);
+                }
+                isCorrect = selectedIdx === correctIdx;
+
+                Array.from(answersDiv.children).forEach((optionDiv, idx) => {
+                    optionDiv.classList.remove("selected");
+                    if (idx === correctIdx) {
+                        optionDiv.classList.add("correct");
+                    }
+                    if (idx === selectedIdx && !isCorrect) {
+                        optionDiv.classList.add("incorrect");
+                    }
+                });
+            }
+
+            feedbackMessage.textContent = (isCorrect ? "Awesome! " : "Incorrect. ") + currentQuestion.feedback;
+
+            if (isCorrect) {
+                xp += 10;
+                updateXp();
+            } else {
+                brains--;
+                updateBrains();
+            }
+
+            if (brains <= 0) {
+                brainsPopup.style.display = "flex";
+            } else {
+                setTimeout(() => fetchNextQuestion(isCorrect, userAnswer), 1200);
+            }
+        }
+
+        function skipQuestion() {
+            fetchNextQuestion(null, null);
+        }
+
+        skipBtn.addEventListener("click", () => {
+            skipQuestion();
+        });
+
+        submitBtn.addEventListener("click", () => {
+            checkAnswer();
+        });
+
+        refillBtn.addEventListener("click", () => {
+            brains = brainsMax;
+            updateBrains();
+            brainsPopup.style.display = "none";
+            fetchNextQuestion(null, null);
+        });
+
+        updateBrains();
+        updateXp();
+        fetchNextQuestion(null, null); // Load the first question
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Sign Up - Learnly</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url('https://plus.unsplash.com/premium_photo-1671070290623-d6f76bdbb3db?q=80&w=872&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center center/cover;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 0;
+        }
+        .register-container {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            width: 100%; max-width: 450px;
+            z-index: 1; position: relative;
+        }
+        #allErrors {
+            font-weight: 600;
+            color: #ff4242;
+            background: #ffeaea;
+            margin-bottom: 10px;
+            padding: 4px 8px;
+            border-radius: 7px;
+            min-height: 24px;
+        }
+        .register-container h2 {
+            font-size: 26px;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+        .input-field,
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 5px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        .input-field:focus,
+        .input-group select:focus { border-color: #5a7dff; }
+        .error-message {
+            color: red;
+            font-size: 12px;
+            margin-top: 2px;
+            min-height: 16px;
+        }
+        .register-btn {
+            width: 100%;
+            padding: 12px;
+            background: #5a7dff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        .register-btn:hover { background: #004dff; }
+        .login-link {
+            margin-top: 15px;
+            font-size: 14px;
+            text-align: center;
+            color: #555;
+        }
+        .login-link a {
+            text-decoration: none;
+            color: #5a7dff;
+            font-weight: 600;
+        }
+        .login-link a:hover { text-decoration: underline; }
+        .section-header {
+            margin: 20px 0 10px;
+            font-size: 18px;
+            font-weight: 500;
+            color: #444;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        @media (max-width: 500px) {
+            .register-container { padding: 20px; }
+            .register-container h2 { font-size: 22px; }
+            .input-field { font-size: 14px; }
+            .register-btn { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h2>Join Univyze Today</h2>
+        <div class="error-message" id="allErrors"></div>
+        <form id="signupForm">
+            <input type="text" class="input-field" id="fullname" placeholder="Full Name" required>
+            <div class="error-message" id="fullnameError"></div>
+            <input type="email" class="input-field" id="email" placeholder="School Email" required>
+            <div class="error-message" id="emailError"></div>
+            <input type="password" class="input-field" id="password" placeholder="Password" required>
+            <div class="error-message" id="passwordError"></div>
+            <input type="password" class="input-field" id="confirmPassword" placeholder="Confirm Password" required>
+            <div class="error-message" id="confirmPasswordError"></div>
+            <input type="text" class="input-field" id="phone" placeholder="Phone Number" required>
+            <div class="error-message" id="phoneError"></div>
+            <select class="input-field" id="state" required>
+                <option value="" disabled selected>Select Your State</option>
+                <option>Andhra Pradesh</option>
+                <option>Bihar</option>
+                <option>Delhi</option>
+                <option>Maharashtra</option>
+                <option>Tamil Nadu</option>
+                <option>West Bengal</option>
+            </select>
+            <div class="error-message" id="stateError"></div>
+            <input type="text" class="input-field" id="username" placeholder="Username" required>
+            <div class="error-message" id="usernameError"></div>
+            <div class="section-header">Academic Details</div>
+            <input type="text" class="input-field" id="school10" placeholder="10th School Name" required>
+            <div class="error-message" id="school10Error"></div>
+            <input type="text" class="input-field" id="marks10" placeholder="10th Marks (%)" required>
+            <div class="error-message" id="marks10Error"></div>
+            <input type="text" class="input-field" id="school12" placeholder="12th School Name">
+            <div class="error-message" id="school12Error"></div>
+            <select class="input-field" id="stream12">
+                <option value="" disabled selected>12th Stream</option>
+                <option>Science</option>
+                <option>Commerce</option>
+                <option>Arts</option>
+            </select>
+            <div class="error-message" id="stream12Error"></div>
+            <input type="text" class="input-field" id="marks12" placeholder="12th Marks (%)">
+            <div class="error-message" id="marks12Error"></div>
+            <button type="submit" class="register-btn">Sign Up as a Student</button>
+            <div class="login-link">
+                Already have an account? <a href="/signin.html">Log In</a>
+            </div>
+            <div class="error-message" id="serverErrors"></div>
+        </form>
+    </div>
+    <script>
+        document.getElementById("signupForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            // Clear previous error messages
+            document.getElementById("allErrors").textContent = "";
+            document.querySelectorAll(".error-message").forEach(el => {
+                // Don't clear the top error paragraph yet
+                if (el.id !== "allErrors") el.textContent = "";
+            });
+
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            // Check for password mismatch (client)
+            if (password !== confirmPassword) {
+                document.getElementById("confirmPasswordError").textContent = "Passwords do not match";
+                document.getElementById("allErrors").textContent = "Passwords do not match";
+                return;
+            }
+
+            // Collect form data
+            const data = {
+                fullname: document.getElementById("fullname").value,
+                email: document.getElementById("email").value,
+                password,
+                phone: document.getElementById("phone").value,
+                state: document.getElementById("state").value,
+                username: document.getElementById("username").value,
+                school10: document.getElementById("school10").value,
+                marks10: document.getElementById("marks10").value,
+                school12: document.getElementById("school12").value,
+                stream12: document.getElementById("stream12").value,
+                marks12: document.getElementById("marks12").value,
+            };
+
+            try {
+                const response = await axios.post("/api/signup", data);
+                if (response.data.message) {
+                    window.location.href = "/signin.html";
+                }
+            } catch (error) {
+                // Network error
+                if (!error.response) {
+                    document.getElementById("allErrors").textContent = "Network error: Server unreachable.";
+                    return;
+                }
+                // Zod/server validation errors
+                if (error.response.status === 400 && Array.isArray(error.response.data.errors)) {
+                    const allMessages = [];
+                    error.response.data.errors.forEach(err => {
+                        allMessages.push(err.message);
+                        const errorElement = document.getElementById(`${err.path}Error`);
+                        if (errorElement) errorElement.textContent = err.message;
+                    });
+                    document.getElementById("allErrors").textContent = allMessages.join(" | ");
+                    return;
+                }
+                // General server error
+                document.getElementById("allErrors").textContent = error.response.data?.message || "An unexpected error occurred.";
+            }
+        });
+    </script>
+</body>
+</html>
