@@ -1,332 +1,649 @@
-<script>
-(function() {
-    'use strict';
+<!DOCTYPE html>
+<html lang="en">
 
-    const brainsMax = 5;
-    let brains = brainsMax;
-    let xp = 0;
-    let currentQuestion = null;
-    let selectedOptions = [];
-    let questionCount = 0;
-    const totalQuestions = 10;
-
-    const brainsDiv = document.getElementById("brains");
-    const questionElem = document.getElementById("question");
-    const pageTitle = document.getElementById("pageTitle");
-    const questionCounter = document.getElementById("questionCounter");
-    const quizSection = document.getElementById("quiz-section");
-    const questionDisplay = document.getElementById("question-display");
-    const answersDiv = document.getElementById("answers");
-    const submitBtn = document.getElementById("submitBtn");
-    const skipBtn = document.getElementById("skipBtn");
-    const feedbackMessage = document.getElementById("feedbackMessage");
-    const errorMessage = document.getElementById("errorMessage");
-    const xpBar = document.getElementById("xp-bar");
-    const brainsPopup = document.getElementById("brainsPopup");
-    const refillBtn = document.getElementById("refillBtn");
-    const loadingOverlay = document.getElementById("loading");
-    const congratsMessage = document.getElementById("congratsMessage");
-    const finalXp = document.getElementById("finalXp");
-    const goBackBtn = document.getElementById("goBackBtn");
-
-    // Get topic from URL parameters or localStorage with fallback (lowercase for consistency)
-    const urlParams = new URLSearchParams(window.location.search);
-    let topic = urlParams.get('topic') || localStorage.getItem('selectedTopic') || 'magnetism';
-    topic = topic.toLowerCase();  // Ensure lowercase
-    localStorage.setItem('selectedTopic', topic);
-    pageTitle.textContent = `${topic.charAt(0).toUpperCase() + topic.slice(1)} Learning`;
-    const apiUrl = `/api/topic/${encodeURIComponent(topic)}`;
-
-    console.log('Topic:', topic, 'API URL:', apiUrl);  // Debug log
-
-    // Get token from localStorage for auth
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert('Please log in to access the learning content.');
-        window.location.href = '/signin.html';
-        return;  // Now scoped inside IIFE
-    }
-
-    // Create Axios instance with auth header
-    const api = axios.create({
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title id="pageTitle">Learning Content</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            background-color: #15202b;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            color: white;
         }
-    });
 
-    function updateBrains() {
-        brainsDiv.textContent = "🧠".repeat(brains) + "🤍".repeat(brainsMax - brains);
-    }
-
-    function updateXp() {
-        const width = Math.min((xp / 100) * 100, 100);
-        xpBar.style.width = `${width}%`;
-    }
-
-    function showError(msg) {
-        console.error('Error:', msg);  // Debug log
-        errorMessage.textContent = msg;
-        errorMessage.style.display = 'block';
-        loadingOverlay.style.display = 'none';
-    }
-
-    function updateQuestionCounter() {
-        questionCounter.textContent = `${questionCount + 1}/${totalQuestions}`;
-    }
-
-    function loadQuestion(q) {
-        if (!q) {
-            showError('No question data received. Please try again.');
-            return;
+        .container {
+            background-color: #192734;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
         }
-        feedbackMessage.textContent = "";
-        submitBtn.disabled = true;
-        selectedOptions = [];
-        questionDisplay.style.display = 'none';
-        answersDiv.style.display = '';
-        quizSection.style.display = 'flex';
-        errorMessage.style.display = 'none';
 
-        const type = q.type || 'multiple-choice';
-        console.log('Loading question:', q);  // Debug log
+        .xp-bar {
+            height: 6px;
+            background-color: #2c3e50;
+            border-radius: 3px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
 
-        if (type === 'fill-in-the-blanks') {
-            questionElem.innerHTML = q.prompt ? q.prompt.replace('_____', '<input type="text" id="fillInput" autocomplete="off" style="background: #34495e; color: white; border: 1px solid #2c3e50; padding: 0.5rem; border-radius: 4px;">') : 'Loading prompt...';
-            quizSection.style.display = 'none';
+        .xp-bar-inner {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.3s;
+        }
 
-            const input = document.getElementById('fillInput');
-            if (input) {
-                input.focus();
-                input.addEventListener('input', () => {
-                    submitBtn.disabled = input.value.trim() === '';
-                });
+        .brains {
+            float: right;
+            font-size: 1.2rem;
+            color: #e0245e;
+            margin-bottom: 1rem;
+            text-align: right;
+        }
+
+        .question-counter {
+            text-align: center;
+            font-size: 1rem;
+            color: #bdc3c7;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .quiz-section {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .question-display {
+            background-color: #253341;
+            border-radius: 12px;
+            width: 140px;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .answers {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            min-width: 150px;
+        }
+
+        .answer-option {
+            background-color: #253341;
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 1.1rem;
+            border: 2px solid transparent;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .answer-option:hover {
+            background-color: #34495e;
+        }
+
+        .answer-option.selected {
+            background-color: #2ecc71;
+            border-color: #27ae60;
+            color: black;
+        }
+
+        .answer-option.correct {
+            background-color: #27ae60;
+            border-color: #2ecc71;
+            color: black;
+        }
+
+        .answer-option.incorrect {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+            color: white;
+        }
+
+        .answer-option img {
+            max-width: 100px;
+            height: auto;
+            margin-right: 0.5rem;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            background-color: #253341;
+            color: #ccc;
+            border: none;
+            padding: 0.8rem 1.4rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            flex: 1;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #2ecc71;
+            color: black;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(21, 32, 43, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            color: white;
+            font-weight: 600;
+            font-size: 1.2rem;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .popup {
+            background-color: #253341;
+            padding: 1.5rem 2rem;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 90%;
+        }
+
+        .popup button {
+            background-color: #3a81f1;
+            color: white;
+            font-weight: 700;
+            border-radius: 8px;
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.8rem;
+        }
+
+        .error-message {
+            text-align: center;
+            color: #e74c3c;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+
+        .congrats-message {
+            text-align: center;
+            color: #2ecc71;
+            font-weight: bold;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        /* 📱 Mobile optimization */
+        @media (max-width: 480px) {
+            .question-display {
+                width: 120px;
+                height: 130px;
+                font-size: 4rem;
             }
-        } else {
-            questionElem.textContent = q.prompt || 'What is this?';
-            answersDiv.innerHTML = "";
 
-            const options = q.options || [];
-            if (options.length === 0) {
-                answersDiv.innerHTML = '<div class="answer-option">No options available.</div>';
-                return;
+            .answers .answer-option {
+                font-size: 1rem;
+                padding: 0.6rem 0.8rem;
             }
 
-            options.forEach((opt, index) => {
-                const div = document.createElement("div");
-                div.className = "answer-option";
-                div.tabIndex = 0;
+            h2 {
+                font-size: 1.1rem;
+            }
 
-                let displayText = '';
-                if (typeof opt === 'object' && opt !== null) {
-                    if (opt.imageUrl && type === 'visual') {
-                        const img = document.createElement("img");
-                        img.src = opt.imageUrl;
-                        img.alt = opt.description || '';
-                        img.onerror = () => { img.style.display = 'none'; };
-                        div.appendChild(img);
-                    }
-                    displayText = opt.value || opt.description || 'Option';
-                } else {
-                    displayText = opt || 'Option';
+            .buttons button {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="xp-bar" aria-label="xp bar">
+            <div class="xp-bar-inner" id="xp-bar"></div>
+        </div>
+        <div class="brains" id="brains">🧠🧠🧠🧠🧠</div>
+        <div class="question-counter" id="questionCounter">1/10</div>
+
+        <h2 id="question">Loading...</h2>
+
+        <div class="quiz-section" id="quiz-section">
+            <div class="question-display" id="question-display">
+                <!-- Dynamic content display -->
+            </div>
+
+            <div class="answers" id="answers">
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button id="skipBtn">Skip</button>
+            <button id="submitBtn" disabled>Submit</button>
+        </div>
+
+        <div class="message" id="feedbackMessage"></div>
+        <div class="error-message" id="errorMessage" style="display: none;"></div>
+        <div class="congrats-message" id="congratsMessage" style="display: none;">
+            <p>Congratulations! You've completed the quiz with <span id="finalXp">0</span> XP!</p>
+            <button id="goBackBtn">Go Back</button>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="brainsPopup" style="display:none;">
+        <div class="popup">
+            <p>You ran out of brains. Have a free refill on us to keep going!</p>
+            <button id="refillBtn">Refill For Free</button>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="loading" style="display:none;">
+        <div class="popup">
+            <p>Loading next question...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            (function() {
+                'use strict';
+
+                const brainsMax = 5;
+                let brains = brainsMax;
+                let xp = 0;
+                let currentQuestion = null;
+                let selectedOptions = [];
+                let questionCount = 0;
+                const totalQuestions = 10;
+
+                const brainsDiv = document.getElementById("brains");
+                const questionElem = document.getElementById("question");
+                // Removed pageTitle from here; use document.title instead
+                const questionCounter = document.getElementById("questionCounter");
+                const quizSection = document.getElementById("quiz-section");
+                const questionDisplay = document.getElementById("question-display");
+                const answersDiv = document.getElementById("answers");
+                const submitBtn = document.getElementById("submitBtn");
+                const skipBtn = document.getElementById("skipBtn");
+                const feedbackMessage = document.getElementById("feedbackMessage");
+                const errorMessage = document.getElementById("errorMessage");
+                const xpBar = document.getElementById("xp-bar");
+                const brainsPopup = document.getElementById("brainsPopup");
+                const refillBtn = document.getElementById("refillBtn");
+                const loadingOverlay = document.getElementById("loading");
+                const congratsMessage = document.getElementById("congratsMessage");
+                const finalXp = document.getElementById("finalXp");
+                const goBackBtn = document.getElementById("goBackBtn");
+
+                // Null checks for all elements
+                if (!brainsDiv || !questionElem || !questionCounter || !quizSection || !questionDisplay || 
+                    !answersDiv || !submitBtn || !skipBtn || !feedbackMessage || !errorMessage || 
+                    !xpBar || !brainsPopup || !refillBtn || !loadingOverlay || !congratsMessage || 
+                    !finalXp || !goBackBtn) {
+                    console.error('One or more DOM elements not found. Check IDs in HTML.');
+                    return;  // Stop if critical elements missing
                 }
 
-                const span = document.createElement("span");
-                span.textContent = displayText;
-                div.appendChild(span);
+                // Get topic from URL parameters or localStorage with fallback (lowercase for consistency)
+                const urlParams = new URLSearchParams(window.location.search);
+                let topic = urlParams.get('topic') || localStorage.getItem('selectedTopic') || 'magnetism';
+                topic = topic.toLowerCase();  // Ensure lowercase
+                localStorage.setItem('selectedTopic', topic);
+                document.title = `${topic.charAt(0).toUpperCase() + topic.slice(1)} Learning`;  // Use document.title to avoid null
+                const apiUrl = `/api/topic/${encodeURIComponent(topic)}`;
 
-                div.addEventListener("click", () => {
-                    Array.from(answersDiv.children).forEach(child => child.classList.remove("selected"));
-                    div.classList.add("selected");
-                    selectedOptions = [index];
-                    submitBtn.disabled = false;
-                });
+                console.log('Topic:', topic, 'API URL:', apiUrl);  // Debug log
 
-                div.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        div.click();
+                // Get token from localStorage for auth
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    alert('Please log in to access the learning content.');
+                    window.location.href = '/signin.html';
+                    return;  // Now scoped inside IIFE
+                }
+
+                // Create Axios instance with auth header
+                const api = axios.create({
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 });
 
-                answersDiv.appendChild(div);
-            });
-        }
+                function updateBrains() {
+                    if (brainsDiv) brainsDiv.textContent = "🧠".repeat(brains) + "🤍".repeat(brainsMax - brains);
+                }
 
-        submitBtn.disabled = true;
-        skipBtn.disabled = false;
-    }
+                function updateXp() {
+                    if (xpBar) {
+                        const width = Math.min((xp / 100) * 100, 100);
+                        xpBar.style.width = `${width}%`;
+                    }
+                }
 
-    async function fetchNextQuestion(isCorrect = null, userAnswer = null) {
-        if (questionCount >= totalQuestions) {
-            loadingOverlay.style.display = 'none';
-            showCompletion();
-            return;
-        }
+                function showError(msg) {
+                    console.error('Error:', msg);  // Debug log
+                    if (errorMessage) {
+                        errorMessage.textContent = msg;
+                        errorMessage.style.display = 'block';
+                    }
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                }
 
-        loadingOverlay.style.display = 'flex';
-        submitBtn.disabled = true;
-        skipBtn.disabled = true;
-        feedbackMessage.textContent = "";
+                function updateQuestionCounter() {
+                    if (questionCounter) questionCounter.textContent = `${questionCount + 1}/${totalQuestions}`;
+                }
 
-        try {
-            const progressData = {
-                xp: xp,
-                isCorrect: isCorrect,
-                brains: brains,
-                questionId: currentQuestion ? currentQuestion.id : null,
-                userAnswer: userAnswer,
-                topic: topic,
-                questionNumber: questionCount
-            };
+                function loadQuestion(q) {
+                    if (!q) {
+                        showError('No question data received. Please try again.');
+                        return;
+                    }
+                    if (feedbackMessage) feedbackMessage.textContent = "";
+                    submitBtn.disabled = true;
+                    selectedOptions = [];
+                    if (questionDisplay) questionDisplay.style.display = 'none';
+                    if (answersDiv) answersDiv.style.display = '';
+                    if (quizSection) quizSection.style.display = 'flex';
+                    if (errorMessage) errorMessage.style.display = 'none';
 
-            console.log('Fetching next question with data:', progressData);  // Debug log
+                    const type = q.type || 'multiple-choice';
+                    console.log('Loading question:', q);  // Debug log
 
-            const response = await api.post(apiUrl, progressData);
-            console.log('API Response:', response.data);  // Debug log
+                    if (type === 'fill-in-the-blanks') {
+                        if (questionElem) {
+                            questionElem.innerHTML = q.prompt ? q.prompt.replace('_____', '<input type="text" id="fillInput" autocomplete="off" style="background: #34495e; color: white; border: 1px solid #2c3e50; padding: 0.5rem; border-radius: 4px;">') : 'Loading prompt...';
+                        }
+                        if (quizSection) quizSection.style.display = 'none';
 
-            if (response.data && response.data.prompt) {
-                currentQuestion = response.data;
-                questionCount++;
+                        const input = document.getElementById('fillInput');
+                        if (input) {
+                            input.focus();
+                            input.addEventListener('input', () => {
+                                submitBtn.disabled = input.value.trim() === '';
+                            });
+                        }
+                    } else {
+                        if (questionElem) questionElem.textContent = q.prompt || 'What is this?';
+                        if (answersDiv) answersDiv.innerHTML = "";
+
+                        const options = q.options || [];
+                        if (options.length === 0) {
+                            if (answersDiv) answersDiv.innerHTML = '<div class="answer-option">No options available.</div>';
+                            return;
+                        }
+
+                        options.forEach((opt, index) => {
+                            const div = document.createElement("div");
+                            div.className = "answer-option";
+                            div.tabIndex = 0;
+
+                            let displayText = '';
+                            if (typeof opt === 'object' && opt !== null) {
+                                if (opt.imageUrl && type === 'visual') {
+                                    const img = document.createElement("img");
+                                    img.src = opt.imageUrl;
+                                    img.alt = opt.description || '';
+                                    img.onerror = () => { img.style.display = 'none'; };
+                                    div.appendChild(img);
+                                }
+                                displayText = opt.value || opt.description || 'Option';
+                            } else {
+                                displayText = opt || 'Option';
+                            }
+
+                            const span = document.createElement("span");
+                            span.textContent = displayText;
+                            div.appendChild(span);
+
+                            div.addEventListener("click", () => {
+                                Array.from(answersDiv.children).forEach(child => child.classList.remove("selected"));
+                                div.classList.add("selected");
+                                selectedOptions = [index];
+                                submitBtn.disabled = false;
+                            });
+
+                            div.addEventListener("keydown", (e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    div.click();
+                                }
+                            });
+
+                            if (answersDiv) answersDiv.appendChild(div);
+                        });
+                    }
+
+                    submitBtn.disabled = true;
+                    skipBtn.disabled = false;
+                }
+
+                async function fetchNextQuestion(isCorrect = null, userAnswer = null) {
+                    if (questionCount >= totalQuestions) {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                        showCompletion();
+                        return;
+                    }
+
+                    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+                    submitBtn.disabled = true;
+                    skipBtn.disabled = true;
+                    if (feedbackMessage) feedbackMessage.textContent = "";
+
+                    try {
+                        const progressData = {
+                            xp: xp,
+                            isCorrect: isCorrect,
+                            brains: brains,
+                            questionId: currentQuestion ? currentQuestion.id : null,
+                            userAnswer: userAnswer,
+                            topic: topic,
+                            questionNumber: questionCount
+                        };
+
+                        console.log('Fetching next question with data:', progressData);  // Debug log
+
+                        const response = await api.post(apiUrl, progressData);
+                        console.log('API Response:', response.data);  // Debug log
+
+                        if (response.data && response.data.prompt) {
+                            currentQuestion = response.data;
+                            questionCount++;
+                            updateQuestionCounter();
+                            loadQuestion(currentQuestion);
+                        } else if (response.data && response.data.completed) {
+                            showCompletion();
+                        } else {
+                            throw new Error('Invalid question data from server');
+                        }
+                    } catch (error) {
+                        console.error('Fetch error:', error);  // Enhanced logging
+                        if (error.response && error.response.status === 401) {
+                            alert('Session expired. Please log in again.');
+                            localStorage.removeItem('token');
+                            window.location.href = '/signin.html';
+                            return;
+                        } else if (error.response && error.response.status >= 500) {
+                            showError('Server error. Please try again later.');
+                        } else if (error.response && error.response.status === 404) {
+                            showError('No questions available for this topic. Try another topic.');
+                        } else {
+                            showError('Error loading question. Check your connection and try again.');
+                        }
+                        submitBtn.disabled = false;
+                        skipBtn.disabled = false;
+                    } finally {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    }
+                }
+
+                function checkAnswer() {
+                    if (!currentQuestion) return;
+                    submitBtn.disabled = true;
+                    skipBtn.disabled = true;
+                    const type = currentQuestion.type || 'multiple-choice';
+                    let isCorrect = false;
+                    let userAnswer = null;
+
+                    if (type === 'fill-in-the-blanks') {
+                        const input = document.getElementById('fillInput');
+                        if (input) {
+                            userAnswer = input.value.trim().toLowerCase();
+                            const correct = (currentQuestion.correctAnswer || '').toLowerCase();
+                            isCorrect = userAnswer === correct;
+
+                            if (isCorrect) {
+                                input.style.border = '2px solid #27ae60';
+                                if (feedbackMessage) feedbackMessage.style.color = "#27ae60";
+                            } else {
+                                input.style.border = '2px solid #e74c3c';
+                                if (feedbackMessage) feedbackMessage.style.color = "#e74c3c";
+                            }
+                        }
+                    } else {
+                        const selectedIdx = selectedOptions[0];
+                        const options = currentQuestion.options || [];
+                        if (selectedIdx !== undefined && selectedIdx < options.length) {
+                            if (typeof options[selectedIdx] === 'object' && options[selectedIdx] !== null) {
+                                userAnswer = options[selectedIdx].value || options[selectedIdx];
+                            } else {
+                                userAnswer = options[selectedIdx];
+                            }
+                        }
+
+                        let correctIdx = -1;
+                        const correctAnswer = currentQuestion.correctAnswer;
+                        options.forEach((opt, idx) => {
+                            const optVal = typeof opt === 'object' ? (opt.value || opt) : opt;
+                            if (optVal === correctAnswer) {
+                                correctIdx = idx;
+                            }
+                        });
+
+                        isCorrect = selectedIdx === correctIdx;
+
+                        Array.from(answersDiv.children).forEach((optionDiv, idx) => {
+                            optionDiv.classList.remove("selected");
+                            if (idx === correctIdx) {
+                                optionDiv.classList.add("correct");
+                            }
+                            if (idx === selectedIdx && !isCorrect && selectedIdx !== undefined) {
+                                optionDiv.classList.add("incorrect");
+                            }
+                        });
+                    }
+
+                    const feedback = currentQuestion.feedback || (isCorrect ? 'Great job!' : 'Keep trying!');
+                    if (feedbackMessage) {
+                        feedbackMessage.textContent = (isCorrect ? "Awesome! " : "Incorrect. ") + feedback;
+                        feedbackMessage.style.color = isCorrect ? "#27ae60" : "#e74c3c";
+                    }
+
+                    if (isCorrect) {
+                        xp += 10;
+                        updateXp();
+                    } else {
+                        brains--;
+                        updateBrains();
+                    }
+
+                    if (brains <= 0) {
+                        if (brainsPopup) brainsPopup.style.display = "flex";
+                    } else if (questionCount < totalQuestions) {
+                        setTimeout(() => fetchNextQuestion(isCorrect, userAnswer), 1500);
+                    } else {
+                        showCompletion();
+                    }
+                }
+
+                function skipQuestion() {
+                    if (questionCount < totalQuestions) {
+                        fetchNextQuestion(null, null);
+                    } else {
+                        showCompletion();
+                    }
+                }
+
+                function showCompletion() {
+                    if (quizSection) quizSection.style.display = 'none';
+                    if (submitBtn) submitBtn.style.display = 'none';
+                    if (skipBtn) skipBtn.style.display = 'none';
+                    if (feedbackMessage) feedbackMessage.style.display = 'none';
+                    if (congratsMessage) congratsMessage.style.display = 'block';
+                    if (finalXp) finalXp.textContent = xp;
+                }
+
+                // Event listeners (with null checks)
+                if (skipBtn) skipBtn.addEventListener("click", skipQuestion);
+                if (submitBtn) submitBtn.addEventListener("click", checkAnswer);
+                if (refillBtn) refillBtn.addEventListener("click", () => {
+                    brains = brainsMax;
+                    updateBrains();
+                    if (brainsPopup) brainsPopup.style.display = "none";
+                    fetchNextQuestion(null, null);
+                });
+                if (goBackBtn) goBackBtn.addEventListener("click", () => {
+                    window.location.href = '/options.html';
+                });
+
+                // Initialize
+                updateBrains();
+                updateXp();
                 updateQuestionCounter();
-                loadQuestion(currentQuestion);
-            } else if (response.data && response.data.completed) {
-                showCompletion();
-            } else {
-                throw new Error('Invalid question data from server');
-            }
-        } catch (error) {
-            console.error('Fetch error:', error);  // Enhanced logging
-            if (error.response && error.response.status === 401) {
-                alert('Session expired. Please log in again.');
-                localStorage.removeItem('token');
-                window.location.href = '/signin.html';
-                return;
-            } else if (error.response && error.response.status >= 500) {
-                showError('Server error. Please try again later.');
-            } else if (error.response && error.response.status === 404) {
-                showError('No questions available for this topic. Try another topic.');
-            } else {
-                showError('Error loading question. Check your connection and try again.');
-            }
-            submitBtn.disabled = false;
-            skipBtn.disabled = false;
-        } finally {
-            loadingOverlay.style.display = 'none';
-        }
-    }
+                fetchNextQuestion(null, null);
+            })();
+        });
+    </script>
+</body>
 
-    function checkAnswer() {
-        if (!currentQuestion) return;
-        submitBtn.disabled = true;
-        skipBtn.disabled = true;
-        const type = currentQuestion.type || 'multiple-choice';
-        let isCorrect = false;
-        let userAnswer = null;
-
-        if (type === 'fill-in-the-blanks') {
-            const input = document.getElementById('fillInput');
-            if (input) {
-                userAnswer = input.value.trim().toLowerCase();
-                const correct = (currentQuestion.correctAnswer || '').toLowerCase();
-                isCorrect = userAnswer === correct;
-
-                if (isCorrect) {
-                    input.style.border = '2px solid #27ae60';
-                    feedbackMessage.style.color = "#27ae60";
-                } else {
-                    input.style.border = '2px solid #e74c3c';
-                    feedbackMessage.style.color = "#e74c3c";
-                }
-            }
-        } else {
-            const selectedIdx = selectedOptions[0];
-            const options = currentQuestion.options || [];
-            if (selectedIdx !== undefined && selectedIdx < options.length) {
-                if (typeof options[selectedIdx] === 'object' && options[selectedIdx] !== null) {
-                    userAnswer = options[selectedIdx].value || options[selectedIdx];
-                } else {
-                    userAnswer = options[selectedIdx];
-                }
-            }
-
-            let correctIdx = -1;
-            const correctAnswer = currentQuestion.correctAnswer;
-            options.forEach((opt, idx) => {
-                const optVal = typeof opt === 'object' ? (opt.value || opt) : opt;
-                if (optVal === correctAnswer) {
-                    correctIdx = idx;
-                }
-            });
-
-            isCorrect = selectedIdx === correctIdx;
-
-            Array.from(answersDiv.children).forEach((optionDiv, idx) => {
-                optionDiv.classList.remove("selected");
-                if (idx === correctIdx) {
-                    optionDiv.classList.add("correct");
-                }
-                if (idx === selectedIdx && !isCorrect && selectedIdx !== undefined) {
-                    optionDiv.classList.add("incorrect");
-                }
-            });
-        }
-
-        const feedback = currentQuestion.feedback || (isCorrect ? 'Great job!' : 'Keep trying!');
-        feedbackMessage.textContent = (isCorrect ? "Awesome! " : "Incorrect. ") + feedback;
-        feedbackMessage.style.color = isCorrect ? "#27ae60" : "#e74c3c";
-
-        if (isCorrect) {
-            xp += 10;
-            updateXp();
-        } else {
-            brains--;
-            updateBrains();
-        }
-
-        if (brains <= 0) {
-            brainsPopup.style.display = "flex";
-        } else if (questionCount < totalQuestions) {
-            setTimeout(() => fetchNextQuestion(isCorrect, userAnswer), 1500);
-        } else {
-            showCompletion();
-        }
-    }
-
-    function skipQuestion() {
-        if (questionCount < totalQuestions) {
-            fetchNextQuestion(null, null);
-        } else {
-            showCompletion();
-        }
-    }
-
-    function showCompletion() {
-        quizSection.style.display = 'none';
-        submitBtn.style.display = 'none';
-        skipBtn.style.display = 'none';
-        feedbackMessage.style.display = 'none';
-        congratsMessage.style.display = 'block';
-        finalXp.textContent = xp;
-    }
-
-    // Event listeners
-    skipBtn.addEventListener("click", skipQuestion);
-    submitBtn.addEventListener("click", checkAnswer);
-    refillBtn.addEventListener("click", () => {
-        brains = brainsMax;
-        updateBrains();
-        brainsPopup.style.display = "none";
-        fetchNextQuestion(null, null);
-    });
-    goBackBtn.addEventListener("click", () => {
-        window.location.href = '/options.html';
-    });
-
-    // Initialize
-    updateBrains();
-    updateXp();
-    updateQuestionCounter();
-    fetchNextQuestion(null, null);
-})();
-</script>
+</html>
