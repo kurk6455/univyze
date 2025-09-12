@@ -303,12 +303,11 @@
                 let xp = 0;
                 let currentQuestion = null;
                 let selectedOptions = [];
-                let questionCount = 0;
+                let questionCount = 0;  // Tracks completed questions
                 const totalQuestions = 10;
 
                 const brainsDiv = document.getElementById("brains");
                 const questionElem = document.getElementById("question");
-                // Removed pageTitle from here; use document.title instead
                 const questionCounter = document.getElementById("questionCounter");
                 const quizSection = document.getElementById("quiz-section");
                 const questionDisplay = document.getElementById("question-display");
@@ -381,7 +380,9 @@
                 }
 
                 function updateQuestionCounter() {
-                    if (questionCounter) questionCounter.textContent = `${questionCount + 1}/${totalQuestions}`;
+                    // Display current question number (completed + 1)
+                    const currentNum = questionCount + 1;
+                    if (questionCounter) questionCounter.textContent = `${Math.min(currentNum, totalQuestions)}/${totalQuestions}`;
                 }
 
                 function loadQuestion(q) {
@@ -469,6 +470,7 @@
                 }
 
                 async function fetchNextQuestion(isCorrect = null, userAnswer = null) {
+                    // Check completion BEFORE fetching/loading
                     if (questionCount >= totalQuestions) {
                         if (loadingOverlay) loadingOverlay.style.display = 'none';
                         showCompletion();
@@ -488,7 +490,7 @@
                             questionId: currentQuestion ? currentQuestion.id : null,
                             userAnswer: userAnswer,
                             topic: topic,
-                            questionNumber: questionCount
+                            questionNumber: questionCount  // Pass completed count
                         };
 
                         console.log('Fetching next question with data:', progressData);  // Debug log
@@ -496,13 +498,19 @@
                         const response = await api.post(apiUrl, progressData);
                         console.log('API Response:', response.data);  // Debug log
 
+                        // Double-check completion from server response
+                        if (response.data && response.data.completed) {
+                            showCompletion();
+                            return;
+                        }
+
                         if (response.data && response.data.prompt) {
                             currentQuestion = response.data;
-                            questionCount++;
+                            // Update counter BEFORE loading (shows correct current question)
                             updateQuestionCounter();
+                            // Increment AFTER loading completes (now marks as completed)
                             loadQuestion(currentQuestion);
-                        } else if (response.data && response.data.completed) {
-                            showCompletion();
+                            questionCount++;  // Increment after load
                         } else {
                             throw new Error('Invalid question data from server');
                         }
@@ -615,12 +623,15 @@
                 }
 
                 function showCompletion() {
+                    // Hide main UI to prevent overwrites
                     if (quizSection) quizSection.style.display = 'none';
                     if (submitBtn) submitBtn.style.display = 'none';
                     if (skipBtn) skipBtn.style.display = 'none';
                     if (feedbackMessage) feedbackMessage.style.display = 'none';
+                    if (questionElem) questionElem.style.display = 'none';  // Hide question header
+                    if (questionCounter) questionCounter.style.display = 'none';  // Hide counter
                     if (congratsMessage) congratsMessage.style.display = 'block';
-                    if (finalXp) finalXp.textContent = xp;
+                    if (finalXp) finalXp.textContent = xp;  // Set XP safely
                 }
 
                 // Event listeners (with null checks)
@@ -639,7 +650,7 @@
                 // Initialize
                 updateBrains();
                 updateXp();
-                updateQuestionCounter();
+                updateQuestionCounter();  // Initial: 1/10
                 fetchNextQuestion(null, null);
             })();
         });
