@@ -117,6 +117,10 @@
         .btn-primary:hover {
             background: #1e40af;
         }
+        .btn-primary:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
         .btn-secondary {
             background: #6b7280;
             color: white;
@@ -507,6 +511,10 @@
                 width: 100%;
                 justify-content: center;
             }
+            .teacher-card .flex {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -607,7 +615,10 @@
                 <div class="rating-stars">★★★★★</div>
                 <p class="text-gray-600">Rating: <span id="teacherRating">0.0</span> / 5</p>
             </div>
-            <a href="./dashboard.html" class="btn-primary">Back to Dashboard</a>
+            <div class="flex gap-4">
+                <a href="./dashboard.html" class="btn-primary">Back to Dashboard</a>
+                <a href="./index.html" class="btn-secondary">Go to Home</a>
+            </div>
         </div>
 
         <div class="teacher-card">
@@ -774,6 +785,7 @@
                 return;
             }
             try {
+                document.getElementById('teacherDashboard').innerHTML = '<p class="text-center text-gray-600">Loading...</p>';
                 const [userResponse, studentsResponse, reviewsResponse] = await Promise.all([
                     axios.get('/api/user', { headers: { Authorization: `Bearer ${token}` } }),
                     axios.get('/api/teacher/students', { headers: { Authorization: `Bearer ${token}` } }),
@@ -784,55 +796,78 @@
                 const students = studentsResponse.data || [];
                 const reviews = reviewsResponse.data || [];
 
-                document.getElementById('teacherName').textContent = user.name || 'Teacher';
-                document.getElementById('teacherAvatar').src = user.avatar || 'https://via.placeholder.com/80';
-                document.getElementById('teacherRating').textContent = user.rating ? user.rating.toFixed(1) : '0.0';
-
-                const studentsList = document.getElementById('studentsList');
-                studentsList.innerHTML = students.length
-                    ? students.map(student => `
-                        <div class="student-card">
-                            <img src="${student.avatar || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded-full mx-auto mb-2" alt="${student.name} avatar" />
-                            <p class="font-medium">${student.name}</p>
-                            <p class="text-sm text-gray-600">${student.subject}</p>
-                        </div>`).join('')
-                    : '<p class="text-gray-600 text-center">No students assigned yet.</p>';
-
-                const reviewsList = document.getElementById('reviewsList');
-                reviewsList.innerHTML = reviews.length
-                    ? reviews.map(review => `
-                        <div class="review-card mb-3">
-                            <p class="font-medium">${review.studentName}</p>
-                            <div class="rating-stars">${'★'.repeat(Math.round(review.rating))}${'☆'.repeat(5 - Math.round(review.rating))}</div>
-                            <p class="text-sm text-gray-600">${review.comment}</p>
-                        </div>`).join('')
-                    : '<p class="text-gray-600 text-center">No reviews yet.</p>';
+                document.getElementById('teacherDashboard').innerHTML = `
+                    <div class="teacher-card flex flex-col md:flex-row items-center gap-6">
+                        <img id="teacherAvatar" src="${user.avatar || 'https://via.placeholder.com/80'}" class="w-20 h-20 rounded-full border object-cover" alt="Teacher avatar" />
+                        <div class="flex-1 text-center md:text-left">
+                            <h2 id="teacherName" class="text-xl font-semibold text-indigo-700">${user.name || 'Teacher'}</h2>
+                            <div class="rating-stars">${'★'.repeat(Math.round(user.rating || 0))}${'☆'.repeat(5 - Math.round(user.rating || 0))}</div>
+                            <p class="text-gray-600">Rating: <span id="teacherRating">${user.rating ? user.rating.toFixed(1) : '0.0'}</span> / 5</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <a href="./dashboard.html" class="btn-primary">Back to Dashboard</a>
+                            <a href="./index.html" class="btn-secondary">Go to Home</a>
+                        </div>
+                    </div>
+                    <div class="teacher-card">
+                        <h3 class="text-lg font-semibold text-indigo-700 mb-4">Students You Are Teaching</h3>
+                        <div class="students-grid" id="studentsList">
+                            ${students.length
+                                ? students.map(student => `
+                                    <div class="student-card">
+                                        <img src="${student.avatar || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded-full mx-auto mb-2" alt="${student.name} avatar" />
+                                        <p class="font-medium">${student.name}</p>
+                                        <p class="text-sm text-gray-600">${student.subject}</p>
+                                    </div>`).join('')
+                                : '<p class="text-gray-600 text-center">No students assigned yet.</p>'}
+                        </div>
+                    </div>
+                    <div class="teacher-card">
+                        <h3 class="text-lg font-semibold text-indigo-700 mb-4">Student Reviews</h3>
+                        <div id="reviewsList">
+                            ${reviews.length
+                                ? reviews.map(review => `
+                                    <div class="review-card mb-3">
+                                        <p class="font-medium">${review.studentName}</p>
+                                        <div class="rating-stars">${'★'.repeat(Math.round(review.rating))}${'☆'.repeat(5 - Math.round(review.rating))}</div>
+                                        <p class="text-sm text-gray-600">${review.comment}</p>
+                                    </div>`).join('')
+                                : '<p class="text-gray-600 text-center">No reviews yet.</p>'}
+                        </div>
+                    </div>
+                `;
 
                 document.getElementById('upgradeContainer').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'none';
                 document.getElementById('teacherDashboard').style.display = 'block';
             } catch (error) {
                 console.error('Error loading teacher dashboard:', error);
-                alert('Failed to load teacher dashboard.');
+                document.getElementById('teacherDashboard').innerHTML = '<p class="text-center text-red-600">Failed to load teacher dashboard. Please try again.</p>';
             }
         }
 
         document.getElementById('upgradeBtn').addEventListener('click', async () => {
             const token = localStorage.getItem('token');
+            const upgradeBtn = document.getElementById('upgradeBtn');
             if (!token) {
                 alert('Please log in to upgrade your account.');
                 window.location.href = './signin.html';
                 return;
             }
             try {
+                upgradeBtn.disabled = true;
+                upgradeBtn.textContent = 'Upgrading...';
                 await axios.put('/api/user', { role: 'Teacher' }, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 alert('Successfully upgraded to a teacher account!');
-                loadTeacherDashboard();
+                await loadTeacherDashboard();
             } catch (error) {
                 console.error('Error upgrading account:', error);
-                alert('Failed to upgrade account. Please try again.');
+                alert(error.response?.data?.error || 'Failed to upgrade account. Please try again.');
+            } finally {
+                upgradeBtn.disabled = false;
+                upgradeBtn.textContent = 'Upgrade to a Teacher Account';
             }
         });
 
@@ -872,7 +907,7 @@
             document.addEventListener('DOMContentLoaded', async () => {
                 const isTeacher = await checkTeacherStatus();
                 if (isTeacher) {
-                    loadTeacherDashboard();
+                    await loadTeacherDashboard();
                 } else {
                     document.getElementById('upgradeContainer').style.display = 'block';
                     document.getElementById('mainContent').style.display = 'block';

@@ -1,4 +1,3 @@
-// db.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -21,7 +20,9 @@ const usersSchema = new Schema({
     dailyXP: { type: Number, default: 0 },
     xpGoal: { type: Number, default: 50 },
     avatar: { type: String, default: '' },
-    lastProgressDate: { type: Date, default: null }
+    lastProgressDate: { type: Date, default: null },
+    role: { type: String, enum: ['Student', 'Teacher'], default: 'Student' },
+    rating: { type: Number, default: 0.0 }
 });
 
 const questionSchema = new Schema({
@@ -54,14 +55,33 @@ const coursesSchema = new Schema({
     progress: Number
 });
 
+const studentAssignmentSchema = new Schema({
+    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+    studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+    subject: { type: String, required: true },
+    assignedAt: { type: Date, default: Date.now }
+});
+
+const reviewSchema = new Schema({
+    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+    studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+    rating: { type: Number, min: 1, max: 5, required: true },
+    comment: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now }
+});
+
 const usersModel = mongoose.model('users', usersSchema);
 const Question = mongoose.model('Question', questionSchema);
 const Progress = mongoose.model('Progress', progressSchema);
 const Courses = mongoose.model('Courses', coursesSchema);
+const StudentAssignment = mongoose.model('StudentAssignment', studentAssignmentSchema);
+const Review = mongoose.model('Review', reviewSchema);
 
 module.exports = {
     usersModel,
     Question,
     Progress,
-    Courses
+    Courses,
+    StudentAssignment,
+    Review
 };

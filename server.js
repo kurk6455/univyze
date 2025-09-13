@@ -1,7 +1,6 @@
-// server.js
 const express = require('express');
 const mongoose = require('mongoose');
-const { usersModel, Question, Progress, Courses } = require('./db.js');
+const { usersModel, Question, Progress, Courses, StudentAssignment, Review } = require('./db.js');
 const jwt = require('jsonwebtoken');
 const { authenticateJWT } = require('./auth.js');
 const bcrypt = require('bcrypt');
@@ -78,6 +77,7 @@ app.post('/api/signup', async (req, res) => {
         marks12: z.string()
             .optional()
             .or(z.literal('')),
+        role: z.enum(['Student', 'Teacher']).optional().default('Student')
     });
 
     const parsed = validationSchema.safeParse(req.body);
@@ -94,7 +94,7 @@ app.post('/api/signup', async (req, res) => {
 
     const {
         fullname, email, password, phone, state,
-        username, school10, marks10, school12, stream12, marks12
+        username, school10, marks10, school12, stream12, marks12, role
     } = parsed.data;
 
     try {
@@ -125,7 +125,8 @@ app.post('/api/signup', async (req, res) => {
             marks10: marks10Num,
             school12,
             stream12,
-            marks12: marks12Num
+            marks12: marks12Num,
+            role
         });
 
         return res.json({ message: "Successfully signed up" });
@@ -171,9 +172,7 @@ app.post('/api/signin', async (req, res) => {
     } catch (e) {
         console.error("Signin error:", e);
         return res.status(500).json({
-
             errors: [{ path: 'server', message: 'An unexpected error occurred' }]
-
         });
     }
 });
@@ -320,9 +319,29 @@ app.post('/api/chat', authenticateJWT, async (req, res) => {
 // GET /api/user
 app.get('/api/user', authenticateJWT, async (req, res) => {
     try {
-        const user = await usersModel.findById(req.userId);
+        const user = await usersModel.findById(req.userId).select('-password');
         if (!user) return res.status(404).json({ error: 'User not found' });
-        res.json(user);
+        res.json({
+            name: user.fullname,
+            email: user.email,
+            phone: user.phone,
+            state: user.state,
+            username: user.username,
+            school10: user.school10,
+            marks10: user.marks10,
+            school12: user.school12,
+            stream12: user.stream12,
+            marks12: user.marks12,
+            crowns: user.crowns,
+            streak: user.streak,
+            gems: user.gems,
+            totalXP: user.totalXP,
+            dailyXP: user.dailyXP,
+            xpGoal: user.xpGoal,
+            avatar: user.avatar,
+            role: user.role,
+            rating: user.rating
+        });
     } catch (error) {
         console.error('Get user error:', error);
         res.status(500).json({ error: 'Failed to fetch user' });
@@ -331,11 +350,85 @@ app.get('/api/user', authenticateJWT, async (req, res) => {
 
 // PUT /api/user
 app.put('/api/user', authenticateJWT, async (req, res) => {
+    const validationSchema = z.object({
+        name: z.string().min(3).optional(),
+        email: z.string().email().optional(),
+        phone: z.string().regex(/^\d{10}$/).optional(),
+        state: z.string().min(3).optional(),
+        username: z.string().min(3).optional(),
+        school10: z.string().min(3).optional(),
+        marks10: z.number().min(0).max(100).optional(),
+        school12: z.string().optional().or(z.literal('')),
+        stream12: z.string().optional().or(z.literal('')),
+        marks12: z.number().min(0).max(100).optional().or(z.literal('')),
+        role: z.enum(['Student', 'Teacher']).optional(),
+        rating: z.number().min(0).max(5).optional()
+    });
+
+    const parsed = validationSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+        const formatted = parsed.error.issues.map(e => ({
+            path: e.path.join("."),
+            message: e.message
+        }));
+        return res.status(400).json({ errors: formatted });
+    }
+
     try {
-        const updatedUser = await usersModel.findByIdAndUpdate(req.userId, req.body, { new: true });
-        res.json(updatedUser);
+        const updateData = {
+            fullname: parsed.data.name,
+            email: parsed.data.email,
+            phone: parsed.data.phone,
+            state: parsed.data.state,
+            username: parsed.data.username,
+            school10: parsed.data.school10,
+            marks10: parsed.data.marks10,
+            school12: parsed.data.school12,
+            stream12: parsed.data.stream12,
+            marks12: parsed.data.marks12,
+            role: parsed.data.role,
+            rating: parsed.data.rating
+        };
+
+        // Remove undefined fields to avoid overwriting with undefined
+        Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+        const updatedUser = await usersModel.findByIdAndUpdate(req.userId, updateData, { new: true }).select('-password');
+        if (!updatedUser) return res.status(404).json({ error: 'User not found' });
+
+        res.json({
+            name: updatedUser.fullname,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            state: updatedUser.state,
+            username: updatedUser.username,
+            school10: updatedUser.school10,
+            marks10: updatedUser.marks10,
+            school12: updatedUser.school12,
+            stream12: updatedUser.stream12,
+            marks12: updatedUser.marks12,
+            crowns: updatedUser.crowns,
+            streak: updatedUser.streak,
+            gems: updatedUser.gems,
+            totalXP: updatedUser.totalXP,
+            dailyXP: updatedUser.dailyXP,
+            xpGoal: updatedUser.xpGoal,
+            avatar: updatedUser.avatar,
+            role: updatedUser.role,
+            rating: updatedUser.rating
+        });
     } catch (error) {
         console.error('Update user error:', error);
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyValue)[0];
+            return res.status(400).json({
+                errors: [{
+                    path: field,
+                    message: `This ${field} is already registered`
+                }]
+            });
+        }
         res.status(500).json({ error: 'Failed to update user' });
     }
 });
@@ -352,6 +445,56 @@ app.post('/api/user/avatar', authenticateJWT, upload.single('avatar'), async (re
     } catch (error) {
         console.error('Avatar upload error:', error);
         res.status(500).json({ error: 'Failed to upload avatar' });
+    }
+});
+
+// GET /api/teacher/students
+app.get('/api/teacher/students', authenticateJWT, async (req, res) => {
+    try {
+        const user = await usersModel.findById(req.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (user.role !== 'Teacher') return res.status(403).json({ error: 'Access denied: User is not a teacher' });
+
+        const assignments = await StudentAssignment.find({ teacherId: req.userId }).populate('studentId', 'fullname avatar');
+        const students = assignments.map(assignment => ({
+            name: assignment.studentId.fullname,
+            avatar: assignment.studentId.avatar || 'https://via.placeholder.com/50',
+            subject: assignment.subject
+        }));
+
+        res.json(students);
+    } catch (error) {
+        console.error('Get teacher students error:', error);
+        res.status(500).json({ error: 'Failed to fetch students' });
+    }
+});
+
+// GET /api/teacher/reviews
+app.get('/api/teacher/reviews', authenticateJWT, async (req, res) => {
+    try {
+        const user = await usersModel.findById(req.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (user.role !== 'Teacher') return res.status(403).json({ error: 'Access denied: User is not a teacher' });
+
+        const reviews = await Review.find({ teacherId: req.userId }).populate('studentId', 'fullname');
+        const formattedReviews = reviews.map(review => ({
+            studentName: review.studentId.fullname,
+            rating: review.rating,
+            comment: review.comment
+        }));
+
+        // Update teacher's average rating
+        if (reviews.length > 0) {
+            const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+            await usersModel.findByIdAndUpdate(req.userId, { rating: parseFloat(averageRating.toFixed(1)) });
+        } else {
+            await usersModel.findByIdAndUpdate(req.userId, { rating: 0.0 });
+        }
+
+        res.json(formattedReviews);
+    } catch (error) {
+        console.error('Get teacher reviews error:', error);
+        res.status(500).json({ error: 'Failed to fetch reviews' });
     }
 });
 
