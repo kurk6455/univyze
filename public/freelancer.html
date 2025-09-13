@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WorkConnect Marketplace</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    /* Basic Reset */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f9fafb;
+      color: #333;
+    }
+    a, button {
+      cursor: pointer;
+    }
+    /* Header */
+    header {
+      background: white;
+      border-bottom: 1px solid #ddd;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      color: #2563eb;
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    header .auth-buttons button {
+      margin-left: 1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: none;
+      font-weight: 600;
+      transition: background-color 0.3s;
+    }
+    header .auth-buttons .signup {
+      background: #2563eb;
+      color: white;
+    }
+    header .auth-buttons .signup:hover {
+      background: #1e40af;
+    }
+    header .auth-buttons .login {
+      background: transparent;
+      color: #555;
+    }
+    header .auth-buttons .login:hover {
+      color: #111;
+    }
+    /* Hero */
+    .hero {
+      background: linear-gradient(90deg, #2563eb, #7c3aed);
+      color: white;
+      text-align: center;
+      padding: 3rem 1rem 4rem;
+    }
+    .hero h2 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .tabs {
+      display: inline-flex;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+    }
+    .tab-btn {
+      padding: 0.75rem 2rem;
+      border: none;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      color: #4b5563;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .tab-btn.active {
+      background: #2563eb;
+      color: white;
+    }
+    .tab-btn:hover:not(.active) {
+      color: #2563eb;
+    }
+ 
+    main {
+      max-width: 1100px;
+      margin: 2rem auto 4rem;
+      padding: 0 1rem;
+    }
+    /* Search and Filters */
+    .search-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .search-box {
+      flex: 1 1 300px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    .search-box input:focus {
+      border-color: #2563eb;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+    }
+    .search-box .icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      font-size: 1.2rem;
+    }
+    .filter-btn {
+      padding: 0.75rem 1.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: #374151;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .filter-btn:hover {
+      background: #f3f4f6;
+      border-color: #2563eb;
+      color: #2563eb;
+    }
+ 
+    .filters-panel {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-top: 1rem;
+    }
+    .filters-panel h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+      color: #2563eb;
+    }
+    .categories {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+    }
+    .category-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: #f3f4f6;
+      color: #374151;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .category-btn.active {
+      background: #bfdbfe;
+      color: #1e40af;
+    }
+    .category-btn:hover:not(.active) {
+      background: #e0e7ff;
+      color: #1e40af;
+    }
+   
+    .verification-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    }
+    .verification-info .icon {
+      font-size: 1.5rem;
+      color: #2563eb;
+      margin-top: 0.25rem;
+    }
+    .verification-info h3 {
+      margin: 0 0 0.25rem;
+      color: #1e40af;
+    }
+    .verification-info p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #2563eb;
+    }
+ 
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+      transition: box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card:hover {
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .freelancer-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .avatar {
+      width: 48px;
+      height: 48px;
+      background: #bfdbfe;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2563eb;
+      font-weight: bold;
+      font-size: 1.5rem;
+      user-select: none;
+    }
+    .freelancer-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    .freelancer-profession {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin: 0;
+    }
+    .verified-icon {
+      color: #16a34a;
+      font-size: 1.2rem;
+      margin-left: 0.5rem;
+    }
+    .rating-availability {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .rating {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+    .rating .star {
+      font-size: 1rem;
+    }
+    .availability {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      user-select: none;
+    }
+    .available {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .not-available {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .location-rate {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .skill-badge {
+      background: #e5e7eb;
+      color: #374151;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      user-select: none;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background-color 0.3s;
+      width: 100%;
+    }
+    .btn-primary:hover {
+      background: #1e40af;
+    }
+  
+    .job-card-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+    .job-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin: 0 0 0.25rem 0;
+    }
+    .job-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: #6b7280;
+      flex-wrap: wrap;
+    }
+    .job-category {
+      background: #bfdbfe;
+      color: #1e40af;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      user-select: none;
+    }
+    .job-budget {
+      font-weight: 700;
+      color: #16a34a;
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+    .job-urgency {
+      font-weight: 600;
+      font-size: 0.8rem;
+      user-select: none;
+    }
+    .urgency-urgent {
+      color: #dc2626;
+    }
+    .urgency-moderate {
+      color: #ea580c;
+    }
+    .urgency-low {
+      color: #16a34a;
+    }
+    .job-description {
+      font-size: 0.95rem;
+      color: #374151;
+      margin-bottom: 1rem;
+    }
+    .job-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+    .client-rating {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+    .client-rating .star {
+      font-size: 1rem;
+    }
+  
+    .verification-process {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 6px rgb(0 0 0 / 0.1);
+      padding: 2rem 1rem;
+      max-width: 900px;
+      margin: 3rem auto 4rem;
+    }
+    .verification-process h2 {
+      text-align: center;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      color: #2563eb;
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+    }
+    .step {
+      text-align: center;
+    }
+    .step-circle {
+      width: 56px;
+      height: 56px;
+      background: #bfdbfe;
+      border-radius: 50%;
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: #2563eb;
+      user-select: none;
+    }
+    .step h3 {
+      margin: 0 0 0.5rem;
+      font-weight: 700;
+    }
+    .step p {
+      margin: 0;
+      color: #4b5563;
+      font-size: 0.9rem;
+    }
+   
+    @media (max-width: 600px) {
+      .search-filters {
+        flex-direction: column;
+      }
+      .tabs {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ConnectWithwork</h1>
+    <div class="auth-buttons">
+      <button class="signup">Sign Up</button>
+      <button class="login">Login</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h2>Find Perfect Work Opportunities</h2>
+    <p>Connect with verified professionals or find your next gig</p>
+    <div class="tabs" role="tablist" aria-label="Marketplace Tabs">
+      <button class="tab-btn active" data-tab="find-worker" role="tab" aria-selected="true" aria-controls="find-worker-panel" id="find-worker-tab">
+        &#128100; Find Worker
+      </button>
+      <button class="tab-btn" data-tab="find-work" role="tab" aria-selected="false" aria-controls="find-work-panel" id="find-work-tab">
+        &#128188; Find Work
+      </button>
+    </div>
+  </section>
+
+  <main>
+    <div class="search-filters">
+      <div class="search-box">
+        <span class="icon">&#128269;</span>
+        <input type="text" id="search-input" placeholder="Search for skills, professions, or names..." aria-label="Search" />
+      </div>
+      <button class="filter-btn" id="toggle-filters" aria-expanded="false" aria-controls="filters-panel">&#128722; Filters</button>
+    </div>
+
+    <div class="filters-panel" id="filters-panel" hidden>
+      <h3>Categories</h3>
+      <div class="categories" role="list">
+        <!-- Categories buttons inserted by JS -->
+      </div>
+    </div>
+
+    <section class="verification-info" aria-label="Verification Information">
+      <span class="icon">&#128274;</span>
+      <div>
+        <h3>Verified Professionals</h3>
+        <p>All our professionals undergo strict verification including Aadhaar, PAN card, and background checks to ensure quality and trust.</p>
+      </div>
+    </section>
+
+    <section id="find-worker-panel" role="tabpanel" aria-labelledby="find-worker-tab">
+      <h2>Available Freelancers</h2>
+      <div class="cards-grid" id="freelancers-list">
+        <!-- Freelancer cards inserted by JS -->
+      </div>
+    </section>
+
+    <section id="find-work-panel" role="tabpanel" aria-labelledby="find-work-tab" hidden>
+      <h2>Available Jobs</h2>
+      <div id="jobs-list">
+       
+      </div>
+    </section>
+
+    <section class="verification-process" aria-label="Verification Process">
+      <h2>How Verification Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-circle">1</div>
+          <h3>Document Submission</h3>
+          <p>Upload your Aadhaar card, PAN card, and other required documents for verification</p>
+        </div>
+        <div class="step">
+          <div class="step-circle">2</div>
+          <h3>Background Check</h3>
+          <p>Our team verifies your documents and conducts background checks for authenticity</p>
+        </div>
+        <div class="step">
+          <div class="step-circle">3</div>
+          <h3>Verification Badge</h3>
+          <p>Get verified badge and start connecting with clients confidently</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    $(function () {
+      // Data
+      const freelancers = [
+        {
+         
