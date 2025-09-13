@@ -3,37 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>options</title>
+  <title>Options</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    /* Custom styles for QR code and status dots */
+    .qr-placeholder {
+      width: 100px;
+      height: 100px;
+      background-color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .status-dot.green {
+      background-color: #22c55e;
+    }
+    .status-dot.red {
+      background-color: #ef4444;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
   <div class="bg-white shadow-lg rounded-xl p-6 w-full max-w-lg">
-    <!-- Search Bar -->
-    <input 
-      id="searchInput"
-      type="text" 
-      placeholder="🔍 Search topics..." 
-      class="w-full p-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-indigo-400"
-    />
+    <!-- Options View -->
+    <div id="optionsView">
+      <!-- Search Bar and Toggle Button -->
+      <div class="flex items-center space-x-2 mb-4">
+        <input 
+          id="searchInput"
+          type="text" 
+          placeholder="🔍 Search topics..." 
+          class="w-3/4 p-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        />
+        <button id="toggleViewBtn" class="px-3 py-1 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-800 transition">
+          Download View
+        </button>
+      </div>
 
-    <!-- Topics -->
-    <div id="topicsContainer" class="mt-4 flex flex-wrap gap-2 max-h-72 overflow-y-auto">
-      <!-- Topic buttons will load here -->
+      <!-- Topics -->
+      <div id="topicsContainer" class="mt-4 flex flex-wrap gap-2 max-h-72 overflow-y-auto">
+        <!-- Topic buttons will load here -->
+      </div>
+
+      <!-- Download Message -->
+      <div id="downloadMessage" class="mt-4 text-center text-green-600 hidden"></div>
+
+      <!-- Reset and Go Back -->
+      <div class="mt-4 text-center space-x-4">
+        <button 
+          onclick="resetSearch()" 
+          class="text-sm text-gray-500 hover:text-red-500"
+        >
+          ⟳ Reset
+        </button>
+        <a 
+          href="./index.html" 
+          class="text-sm text-gray-500 hover:text-indigo-600"
+        >
+          🏠 Go Back to Home
+        </a>
+      </div>
     </div>
 
-    <!-- Download Message -->
-    <div id="downloadMessage" class="mt-4 text-center text-green-600 hidden"></div>
-
-    <!-- Reset -->
-    <div class="mt-4 text-center">
-      <button 
-        onclick="resetSearch()" 
-        class="text-sm text-gray-500 hover:text-red-500"
-      >
-        ⟳ Reset
-      </button>
+    <!-- Download View -->
+    <div id="downloadView" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold text-indigo-700">Completed Downloads</h2>
+        <!-- Toggle Button moved here dynamically -->
+      </div>
+      <div id="downloadedTopics" class="mb-6 flex flex-col gap-4">
+        <!-- Downloaded topics with QR codes -->
+      </div>
+      <div id="pendingDownloadsSection" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-indigo-700">Pending Downloads</h2>
+          <button id="globalScanBtn" class="px-3 py-1 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-800 transition hidden">
+            Scan QR
+          </button>
+        </div>
+        <div id="notDownloadedTopics" class="flex flex-col gap-4">
+          <!-- Staged topics for download -->
+        </div>
+      </div>
     </div>
   </div>
 
@@ -45,10 +106,23 @@
       "History", "Geography", "Civics", "Economics", "Philosophy"
     ];
 
+    // Hardcode Magnetism as downloaded for demo (replace with backend data)
+    const downloadedTopics = ["Magnetism"];
+    const notDownloadedTopics = topics.filter(t => !downloadedTopics.includes(t));
+    let stagedTopics = []; // Tracks topics selected for download
+
     const container = document.getElementById("topicsContainer");
     const searchInput = document.getElementById("searchInput");
     const downloadMessage = document.getElementById("downloadMessage");
+    const toggleViewBtn = document.getElementById("toggleViewBtn");
+    const optionsView = document.getElementById("optionsView");
+    const downloadView = document.getElementById("downloadView");
+    const downloadedTopicsContainer = document.getElementById("downloadedTopics");
+    const notDownloadedTopicsContainer = document.getElementById("notDownloadedTopics");
+    const pendingDownloadsSection = document.getElementById("pendingDownloadsSection");
+    const globalScanBtn = document.getElementById("globalScanBtn");
 
+    // Render Options View
     function renderTopics(filter = "") {
       container.innerHTML = "";
       topics
@@ -63,16 +137,18 @@
               window.location.href = "/learning.html";
             };
           } else {
-            btn.className += " bg-gray-200";
+            btn.className += stagedTopics.includes(topic) ? " bg-red-200" : " bg-gray-200";
             btn.onclick = () => {
-              if (btn.className.includes("bg-red-200")) {
+              if (stagedTopics.includes(topic)) {
+                stagedTopics = stagedTopics.filter(t => t !== topic);
                 btn.className = btn.className.replace("bg-red-200", "bg-gray-200");
-                downloadMessage.innerText = "Removed from download queue: " + topic;
+                downloadMessage.innerText = "Removed from queue: " + topic;
                 downloadMessage.classList.remove("hidden");
                 setTimeout(() => downloadMessage.classList.add("hidden"), 2000);
               } else {
+                stagedTopics.push(topic);
                 btn.className = btn.className.replace("bg-gray-200", "bg-red-200");
-                downloadMessage.innerText = "Staged for downloading: " + topic;
+                downloadMessage.innerText = "Added to queue: " + topic;
                 downloadMessage.classList.remove("hidden");
                 setTimeout(() => downloadMessage.classList.add("hidden"), 2000);
                 axios.post('/api/topic', { topic: topic })
@@ -85,13 +161,101 @@
         });
     }
 
+    // Render Download View
+    function renderDownloadView() {
+      // Downloaded Topics
+      downloadedTopicsContainer.innerHTML = "";
+      downloadedTopics.forEach(topic => {
+        const div = document.createElement("div");
+        div.className = "flex items-center justify-between p-3 bg-gray-100 rounded-lg";
+        div.innerHTML = `
+          <span class="text-gray-700 font-medium">${topic}</span>
+          <img src="https://via.placeholder.com/100" alt="QR Code for ${topic}" class="qr-placeholder">
+        `;
+        downloadedTopicsContainer.appendChild(div);
+      });
+
+      // Pending Downloads (only show if stagedTopics exist)
+      if (stagedTopics.length > 0) {
+        pendingDownloadsSection.classList.remove("hidden");
+        globalScanBtn.classList.remove("hidden");
+      } else {
+        pendingDownloadsSection.classList.add("hidden");
+        globalScanBtn.classList.add("hidden");
+      }
+      notDownloadedTopicsContainer.innerHTML = "";
+      const isOnline = navigator.onLine;
+      stagedTopics.forEach(topic => {
+        const div = document.createElement("div");
+        div.className = "flex items-center justify-between p-3 bg-gray-100 rounded-lg";
+        if (isOnline) {
+          // Online: Green dot, send download request
+          div.innerHTML = `
+            <div class="flex items-center">
+              <span class="status-dot green"></span>
+              <span class="text-gray-700 font-medium">${topic}</span>
+            </div>
+            <button class="px-3 py-1 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-800 transition download-btn" data-topic="${topic}">
+              Download
+            </button>
+          `;
+          div.querySelector(".download-btn").onclick = () => {
+            axios.post('/api/topic', { topic: topic })
+              .then(response => {
+                console.log(response.data);
+                alert(`Download started for ${topic}`);
+              })
+              .catch(error => console.error('Error:', error));
+          };
+        } else {
+          // Offline: Red dot, Bluetooth text only
+          div.innerHTML = `
+            <div class="flex items-center">
+              <span class="status-dot red"></span>
+              <span class="text-gray-700 font-medium">${topic}</span>
+            </div>
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500">Looking for nearby Bluetooth device</span>
+            </div>
+          `;
+        }
+        notDownloadedTopicsContainer.appendChild(div);
+      });
+    }
+
+    // Global Scan Button (Red, visible when Pending Downloads is shown)
+    globalScanBtn.addEventListener("click", () => {
+      console.log("Initiate global QR code scan for staged topics:", stagedTopics);
+      // Replace with actual QR scanner logic
+    });
+
+    // Toggle between Options and Download views
+    toggleViewBtn.addEventListener("click", () => {
+      if (optionsView.classList.contains("hidden")) {
+        optionsView.classList.remove("hidden");
+        downloadView.classList.add("hidden");
+        toggleViewBtn.innerText = "Download View";
+        // Move toggle button back to Options view
+        document.querySelector("#optionsView .flex.items-center").appendChild(toggleViewBtn);
+      } else {
+        optionsView.classList.add("hidden");
+        downloadView.classList.remove("hidden");
+        toggleViewBtn.innerText = "Options View";
+        // Move toggle button to Download view (under Completed Downloads)
+        document.querySelector("#downloadView .flex.justify-between").appendChild(toggleViewBtn);
+        renderDownloadView();
+      }
+    });
+
+    // Reset Search
     function resetSearch() {
       searchInput.value = "";
       downloadMessage.classList.add("hidden");
+      stagedTopics = []; // Clear staged topics
       renderTopics();
     }
 
-    // initial load
+    // Initial load
     renderTopics();
   </script>
 
