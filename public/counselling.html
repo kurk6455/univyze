@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Comprehensive Services</title>
+  <style>
+   
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      margin: 0;
+      padding: 40px 20px;
+      color: #222;
+      text-align: center;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-weight: 900;
+      font-size: 2.8rem;
+      color: #fff;
+      margin-bottom: 10px;
+      text-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    }
+
+    p.subtitle {
+      color: #eee;
+      font-size: 1.2rem;
+      margin-bottom: 50px;
+      max-width: 600px;
+      text-shadow: 0 1px 5px rgba(0,0,0,0.25);
+    }
+
+    .services-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 30px;
+      max-width: 1000px;
+      width: 100%;
+    }
+
+    .service {
+      background: #fff;
+      border-radius: 15px;
+      padding: 30px 25px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .service:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+    }
+
+    .icon {
+      background-color: #4f6ef7;
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 20px;
+      color: white;
+      font-size: 28px;
+      box-shadow: 0 4px 15px rgba(79,110,247, 0.6);
+      transition: background-color 0.3s ease;
+    }
+
+    .service:hover .icon {
+      background-color: #354fdb;
+      box-shadow: 0 6px 25px rgba(53,79,219, 0.8);
+    }
+
+    .service h3 {
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .service p {
+      font-size: 1rem;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 25px;
+      flex-grow: 1;
+    }
+
+    .service button {
+      background: #4f6ef7;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 12px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 15px rgba(79,110,247, 0.5);
+    }
+
+    .service button:hover {
+      background-color: #354fdb;
+      box-shadow: 0 6px 25px rgba(53,79,219, 0.8);
+    }
+
+   
+    @media (max-width: 400px) {
+      h1 {
+        font-size: 2rem;
+      }
+      p.subtitle {
+        font-size: 1rem;
+      }
+      .service h3 {
+        font-size: 1.25rem;
+      }
+      .service p {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous" defer></script>
+</head>
+<body>
+  <h1>Our Comprehensive Services</h1>
+  <p class="subtitle">
+    We provide end-to-end admission support to help you make informed decisions.
+  </p>
+
+  <div class="services-container">
+    <div class="service">
+      <div class="icon"><i class="fas fa-book"></i></div>
+      <h3>College Selection</h3>
+      <p>Personalized recommendations based on your academic profile, career goals, and budget.</p>
+      <button type="button" onclick="alert('Explore College Selection')">Learn More</button>
+    </div>
+    <div class="service">
+      <div class="icon"><i class="fas fa-clipboard"></i></div>
+      <h3>Application Guidance</h3>
+      <p>Comprehensive assistance with form filling, documentation, and submission processes.</p>
+      <button type="button" onclick="alert('Get Application Guidance')">Learn More</button>
+    </div>
+    <div class="service">
+      <div class="icon"><i class="fas fa-lock"></i></div>
+      <h3>Scholarship Assistance</h3>
+      <p>Guidance on identifying and applying for scholarships and financial aid opportunities.</p>
+      <button type="button" onclick="alert('Find Scholarship Assistance')">Learn More</button>
+    </div>
+    <div class="service">
+      <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+      <h3>Admission Timeline</h3>
+      <p>Customized roadmap with deadlines for, applications, and other crucial milestones.</p>
+      <button type="button" onclick="alert('View Admission Timeline')">Learn More</button>
+    </div>
+    <div class="service">
+      <div class="icon"><i class="fas fa-lightbulb"></i></div>
+      <h3>Reference & Support</h3>
+      <p>Connect with alumni for valuable insights and mentorship and also provide personalized advice based on academic goals.</p>
+      <button type="button" onclick="alert('Get Reference & Support')">Learn More</button>
+    </div>
+    <div class="service">
+      <div class="icon"><i class="fas fa-users"></i></div>
+      <h3>Alumni Network</h3>
+      <p>Connect with alumni from your target institutions for valuable insights and mentorship.</p>
+      <button type="button" onclick="alert('Join Alumni Network')">Learn More</button>
+    </div>
+  </div>
+</body>
+</html>

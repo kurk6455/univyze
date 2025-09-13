@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Univyze Dashboard — Full</title>
+
+    <!-- Tailwind + Font -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background:
+                linear-gradient(rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0.9)),
+                url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1470&q=80') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+        }
+
+        .soft-card {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
+        }
+
+        .xp-circle {
+            transform: rotate(-90deg);
+        }
+
+        /* ensure sidebar grid children can shrink and wrap properly */
+        .min-w-0 {
+            min-width: 0;
+        }
+
+        /* Button hover effects */
+        button:hover {
+            filter: brightness(0.9);
+            transition: filter 0.2s ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex">
+
+    <main class="flex-1 max-w-7xl mx-auto px-4 py-8 grid lg:grid-cols-12 gap-6 w-full">
+
+
+        <aside class="lg:col-span-3 col-span-12 soft-card p-6 flex flex-col gap-6">
+
+            <div class="flex flex-col items-center gap-3">
+                <img id="userAvatar" src="https://via.placeholder.com/100"
+                    class="w-24 h-24 rounded-full border object-cover" alt="User avatar">
+                <div class="text-center">
+                    <div id="userName" class="font-semibold text-lg">User</div>
+                    <div id="userRole" class="text-xs text-gray-500">Member</div>
+                </div>
+            </div>
+
+
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <div class="text-sm text-gray-500">Crowns</div>
+                    <div id="statCrowns" class="font-bold text-indigo-600">0</div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-500">Streak</div>
+                    <div id="statStreak" class="font-bold text-amber-500">0</div>
+                </div>
+                <div>
+                    <div class="text-sm text-gray-500">Gems</div>
+                    <div id="statGems" class="font-bold text-pink-500">0</div>
+                </div>
+            </div>
+
+
+            <div>
+                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Daily XP</span>
+                    <span id="xpProgressText">0 / 50</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="xpProgressFill" class="bg-indigo-600 h-2 rounded-full w-0"></div>
+                </div>
+            </div>
+
+
+            <div id="nextBadgeCard" class="bg-indigo-50 text-indigo-700 p-3 rounded-lg text-sm font-medium">
+                🎯 Next Badge: Starter (50 XP)
+            </div>
+
+
+            <div>
+                <h4 class="text-xs font-semibold text-gray-500 mb-1">Last 7 Days</h4>
+                <div id="streakHeatmap" class="flex gap-1 justify-center"></div>
+            </div>
+
+
+            <div id="tipBox" class="italic text-sm text-gray-600">
+                “Consistency beats intensity.”
+            </div>
+
+
+            <div id="dailyChallenge" class="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-sm font-medium">
+                🎯 Challenge: Complete 2 lessons today!
+            </div>
+
+
+            <button id="completeLessonBtn"
+                class="mt-2 w-full bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-700 transition">+10 XP
+                Lesson</button>
+            <button id="syncBtn"
+                class="w-full border border-indigo-200 rounded-lg py-2 text-indigo-600 hover:bg-indigo-100 transition">Sync</button>
+
+
+            <div class="mt-4 grid grid-cols-2 gap-3 text-left text-sm bg-gray-50 p-3 rounded-lg min-w-0">
+                <div>
+                    <label class="block text-gray-400 text-xs">Email</label>
+                    <div id="sideProfileEmail" class="font-medium break-words">—</div>
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-xs">Language</label>
+                    <div id="sideProfileLang" class="font-medium break-words">—</div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 text-xs">Phone</label>
+                    <div id="sideProfilePhone" class="font-medium">—</div>
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-xs">State</label>
+                    <div id="sideProfileState" class="font-medium">—</div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 text-xs">10th School</label>
+                    <div id="sideProfileSchool10" class="font-medium break-words">—</div>
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-xs">10th %</label>
+                    <div id="sideProfilePercent10" class="font-medium">—</div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-400 text-xs">12th School</label>
+                    <div id="sideProfileSchool12" class="font-medium break-words">—</div>
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-xs">12th %</label>
+                    <div id="sideProfilePercent12" class="font-medium">—</div>
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-gray-400 text-xs">Stream</label>
+                    <div id="sideProfileStream" class="font-medium">—</div>
+                </div>
+            </div>
+
+            <button id="editProfileBtn"
+                class="mt-2 w-full bg-emerald-100 text-emerald-700 rounded-lg py-2 hover:bg-emerald-200 transition">✏️
+                Edit Profile</button>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <section class="lg:col-span-9 col-span-12 space-y-6">
+            <div class="soft-card p-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold">Dashboard</h1>
+                    <p id="welcomeLine" class="text-sm text-gray-600">Welcome</p>
+                </div>
+                <!-- small header edit button (also opens modal) -->
+                <button id="editProfileHeaderBtn"
+                    class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full hidden md:inline-flex hover:bg-emerald-200 transition">✏️
+                    Edit Profile</button>
+            </div>
+
+            <!-- Activity (gauge + chart + heatmap already in sidebar) -->
+            <div class="soft-card p-6">
+                <h3 class="font-semibold">Activity</h3>
+                <div class="mt-4 flex flex-col lg:flex-row items-center gap-6">
+                    <svg width="120" height="120" viewBox="0 0 120 120" class="xp-circle"
+                        aria-label="XP progress circle" role="img">
+                        <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="12" fill="none" />
+                        <circle id="xpStroke" cx="60" cy="60" r="50" stroke="url(#grad)" stroke-width="12"
+                            stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314" fill="none" />
+                        <defs>
+                            <linearGradient id="grad" x1="0" x2="1">
+                                <stop offset="0%" stop-color="#667eea" />
+                                <stop offset="100%" stop-color="#764ba2" />
+                            </linearGradient>
+                        </defs>
+                        <text id="xpLabel" x="60" y="65" text-anchor="middle" font-size="16" font-weight="600"
+                            fill="#4b5563">0%</text>
+                    </svg>
+
+                    <div>
+                        <div id="dailyXpText" class="text-lg font-semibold">0 XP</div>
+                        <div class="text-xs text-gray-500">Goal: <span id="xpGoal">50</span> XP</div>
+                    </div>
+
+                    <div class="flex-1 w-full">
+                        <canvas id="activityChart" height="100" aria-label="Activity chart" role="img"></canvas>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="soft-card p-6">
+                <h3 class="font-semibold">Badges</h3>
+                <div id="badgesList" class="mt-3 flex flex-wrap gap-3"></div>
+            </div>
+
+
+            <div class="soft-card p-6">
+                <h3 class="font-semibold">Recent Learnings</h3>
+                <div id="recentList" class="mt-3 grid sm:grid-cols-2 gap-3"></div>
+            </div>
+
+
+            <div class="soft-card p-6">
+                <h3 class="font-semibold">Leaderboard</h3>
+                <div id="leaderboardList" class="mt-3 space-y-2"></div>
+            </div>
+
+
+            <div class="soft-card p-6">
+                <h3 class="font-semibold">My Courses</h3>
+                <div id="coursesList" class="mt-3 grid sm:grid-cols-2 gap-4"></div>
+            </div>
+        </section>
+    </main>
+
+
+    <div id="editModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" role="dialog"
+        aria-modal="true" aria-labelledby="editProfileTitle">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-auto shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="editProfileTitle" class="text-lg font-semibold">Edit Profile</h3>
+                <button id="closeModal" class="text-gray-500" aria-label="Close modal">✕</button>
+            </div>
+
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <img id="modalAvatarPreview" src="https://via.placeholder.com/80"
+                        class="w-16 h-16 rounded-full object-cover border" alt="Avatar preview">
+                    <div class="flex-1">
+                        <label for="editAvatar" class="text-xs text-gray-500">Avatar</label>
+                        <input id="editAvatar" type="file" accept="image/*" class="w-full text-xs mt-1" />
+                    </div>
+                </div>
+
+                <div>
+                    <label for="editName" class="text-xs text-gray-400">Name</label>
+                    <input id="editName" class="w-full mt-1 p-2 rounded border" />
+                </div>
+                <div>
+                    <label for="editRole" class="text-xs text-gray-400">Role</label>
+                    <input id="editRole" class="w-full mt-1 p-2 rounded border" />
+                </div>
+
+                <div>
+                    <label for="editEmail" class="text-xs text-gray-400">Email</label>
+                    <input id="editEmail" class="w-full mt-1 p-2 rounded border" />
+                </div>
+                <div>
+                    <label for="editLang" class="text-xs text-gray-400">Language</label>
+                    <input id="editLang" class="w-full mt-1 p-2 rounded border" />
+                </div>
+                <div>
+                    <label for="editPhone" class="text-xs text-gray-400">Phone</label>
+                    <input id="editPhone" class="w-full mt-1 p-2 rounded border" />
+                </div>
+                <div>
+                    <label for="editState" class="text-xs text-gray-400">State</label>
+                    <input id="editState" class="w-full mt-1 p-2 rounded border" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="editSchool10" class="text-xs text-gray-400">10th School</label>
+                        <input id="editSchool10" class="w-full mt-1 p-2 rounded border" />
+                    </div>
+                    <div>
+                        <label for="editPercent10" class="text-xs text-gray-400">10th %</label>
+                        <input id="editPercent10" class="w-full mt-1 p-2 rounded border" />
+                    </div>
+                    <div>
+                        <label for="editSchool12" class="text-xs text-gray-400">12th School</label>
+                        <input id="editSchool12" class="w-full mt-1 p-2 rounded border" />
+                    </div>
+                    <div>
+                        <label for="editPercent12" class="text-xs text-gray-400">12th %</label>
+                        <input id="editPercent12" class="w-full mt-1 p-2 rounded border" />
+                    </div>
+                </div>
+
+                <div>
+                    <label for="editStream" class="text-xs text-gray-400">Stream</label>
+                    <input id="editStream" class="w-full mt-1 p-2 rounded border" />
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-4">
+                <button id="cancelEdit"
+                    class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 transition">Cancel</button>
+                <button id="saveEdit"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fallback = {
+            user: {
+                name: "Paulette", role: "Golden", avatar: "",
+                email: "hello@studio.com", language: "English",
+                phone: "+91 98765 43210", state: "Maharashtra",
+                school10: "ABC High School", percent10: "88%",
+                school12: "XYZ Jr College", percent12: "85%",
+                stream: "Science",
+                crowns: 20, streak: 32, gems: 3, totalXP: 120, dailyXP: 18, xpGoal: 50
+            },
+            activity: [5, 8, 12, 15, 20, 12, 18],
+            badges: [
+                { title: "Starter", threshold: 50, icon: "🥉" },
+                { title: "Silver", threshold: 100, icon: "🥈" },
+                { title: "Gold", threshold: 200, icon: "🥇" }
+            ],
+            recent: [
+                { title: "Le passé", xp: 10 },
+                { title: "La nourriture", xp: 12 }
+            ],
+            leaderboard: [
+                { name: "Priya", xp: 220 },
+                { name: "Rahul", xp: 180 },
+                { name: "Aisha", xp: 160 },
+                { name: "John", xp: 140 },
+                { name: "You", xp: 120 }
+            ],
+            courses: [
+                { title: "🇫🇷 French", progress: 40 },
+                { title: "🇪🇸 Spanish", progress: 15 }
+            ]
+        };
+        let data = fallback;
+        let chart = null;
+        let tipInterval = null;
+
+        /* ------------------ Render helpers ------------------ */
+        function render() {
+            const u = data.user;
+
+
+            document.getElementById("userAvatar").src = u.avatar || "https://via.placeholder.com/100";
+            document.getElementById("modalAvatarPreview").src = u.avatar || "https://via.placeholder.com/80";
+            document.getElementById("userName").textContent = u.name;
+            document.getElementById("userRole").textContent = u.role;
+            document.getElementById("welcomeLine").textContent = "Welcome " + u.name;
+
+
+            document.getElementById("statCrowns").textContent = u.crowns;
+            document.getElementById("statStreak").textContent = u.streak;
+            document.getElementById("statGems").textContent = u.gems;
+
+            document.getElementById("sideProfileEmail").textContent = u.email || "—";
+            document.getElementById("sideProfileLang").textContent = u.language || "—";
+            document.getElementById("sideProfilePhone").textContent = u.phone || "—";
+            document.getElementById("sideProfileState").textContent = u.state || "—";
+            document.getElementById("sideProfileSchool10").textContent = u.school10 || "—";
+            document.getElementById("sideProfilePercent10").textContent = u.percent10 || "—";
+            document.getElementById("sideProfileSchool12").textContent = u.school12 || "—";
+            document.getElementById("sideProfilePercent12").textContent = u.percent12 || "—";
+            document.getElementById("sideProfileStream").textContent = u.stream || "—";
+
+            setXP(u.dailyXP, u.xpGoal);
+            setProgressBar(u.dailyXP, u.xpGoal);
+            document.getElementById("xpGoal").textContent = u.xpGoal;
+
+            renderHeatmap();
+            renderChart(data.activity);
+            renderBadges();
+            renderRecent();
+            renderLeaderboard();
+            renderCourses();
+            // start rotating tips only once
+            startRotateTips();
+        }
+    </script>
+</body>
