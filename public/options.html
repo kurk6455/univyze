@@ -6,6 +6,8 @@
   <title>Options</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
     /* Custom styles for QR code and status dots */
     .qr-placeholder {
@@ -29,6 +31,27 @@
     }
     .status-dot.red {
       background-color: #ef4444;
+    }
+    /* Modal for QR scanner */
+    .scanner-modal {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .scanner-modal video {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+    }
+    .scanner-modal-content {
+      background-color: white;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
     }
   </style>
 </head>
@@ -96,6 +119,17 @@
         </div>
       </div>
     </div>
+
+    <!-- QR Scanner Modal -->
+    <div id="scannerModal" class="scanner-modal hidden">
+      <div class="scanner-modal-content">
+        <video id="scannerVideo" autoplay playsinline></video>
+        <p id="scannerStatus" class="mt-2 text-sm text-gray-700">Scanning for QR code...</p>
+        <button id="closeScannerBtn" class="mt-4 px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-800 transition">
+          Close
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -110,6 +144,31 @@
     const downloadedTopics = ["Magnetism"];
     const notDownloadedTopics = topics.filter(t => !downloadedTopics.includes(t));
     let stagedTopics = []; // Tracks topics selected for download
+    let stream = null; // Store camera stream for cleanup
+
+    // Hardcoded Magnetism data for QR code
+    const magnetismData = [
+      {
+        type: 'fill-in-the-blanks',
+        prompt: 'A magnet has two poles: the _____ pole and the south pole.',
+        correctAnswer: 'north',
+        feedback: 'Magnets always have a north and south pole. Like poles repel, and unlike poles attract.'
+      },
+      {
+        type: 'multiple-choice',
+        prompt: 'What happens when two north poles of magnets are brought close together?',
+        options: ["They attract", "They repel", "They become neutral", "They create a spark"],
+        correctAnswer: "They repel",
+        feedback: 'Like poles repel each other due to magnetic fields.'
+      },
+      {
+        type: 'multiple-choice',
+        prompt: 'What material can block magnetic fields?',
+        options: ["Copper", "Iron", "Mu-metal", "Aluminum"],
+        correctAnswer: "Mu-metal",
+        feedback: 'Mu-metal is a nickel-iron alloy used for magnetic shielding.'
+      }
+    ];
 
     const container = document.getElementById("topicsContainer");
     const searchInput = document.getElementById("searchInput");
@@ -121,6 +180,10 @@
     const notDownloadedTopicsContainer = document.getElementById("notDownloadedTopics");
     const pendingDownloadsSection = document.getElementById("pendingDownloadsSection");
     const globalScanBtn = document.getElementById("globalScanBtn");
+    const scannerModal = document.getElementById("scannerModal");
+    const scannerVideo = document.getElementById("scannerVideo");
+    const scannerStatus = document.getElementById("scannerStatus");
+    const closeScannerBtn = document.getElementById("closeScannerBtn");
 
     // Render Options View
     function renderTopics(filter = "") {
@@ -163,16 +226,28 @@
 
     // Render Download View
     function renderDownloadView() {
-      // Downloaded Topics
+      // Downloaded Topics with QR Codes
       downloadedTopicsContainer.innerHTML = "";
       downloadedTopics.forEach(topic => {
         const div = document.createElement("div");
-        div.className = "flex items-center justify-between p-3 bg-gray-100 rounded-lg";
+        div.className = "flex flex-col items-center p-3 bg-gray-100 rounded-lg";
+        const qrCanvas = document.createElement("canvas");
+        qrCanvas.className = "w-[100px] h-[100px] rounded-lg mt-2";
         div.innerHTML = `
           <span class="text-gray-700 font-medium">${topic}</span>
-          <img src="https://via.placeholder.com/100" alt="QR Code for ${topic}" class="qr-placeholder">
         `;
+        div.appendChild(qrCanvas);
         downloadedTopicsContainer.appendChild(div);
+        // Generate QR code for Magnetism with JSON data, fallback to URL for other topics
+        const qrData = topic === "Magnetism" ? JSON.stringify(magnetismData) : `/learning.html?topic=${encodeURIComponent(topic)}`;
+        QRCode.toCanvas(qrCanvas, qrData, {
+          width: 100,
+          height: 100,
+          margin: 1,
+          color: { dark: "#000000", light: "#ffffff" }
+        }, (error) => {
+          if (error) console.error('QR Code generation error:', error);
+        });
       });
 
       // Pending Downloads (only show if stagedTopics exist)
@@ -223,10 +298,79 @@
       });
     }
 
-    // Global Scan Button (Red, visible when Pending Downloads is shown)
+    // QR Scanner Logic
+    let scanning = false;
+    function startQRScanner() {
+      if (scanning) return;
+      scanning = true;
+      scannerModal.classList.remove("hidden");
+      scannerStatus.innerText = "Scanning for QR code...";
+
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(mediaStream => {
+          stream = mediaStream;
+          scannerVideo.srcObject = stream;
+          scannerVideo.play();
+
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+
+          function scan() {
+            if (!scanning) return;
+            canvas.width = scannerVideo.videoWidth;
+            canvas.height = scannerVideo.videoHeight;
+            if (canvas.width > 0 && canvas.height > 0) {
+              context.drawImage(scannerVideo, 0, 0, canvas.width, canvas.height);
+              const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert"
+              });
+              if (code) {
+                stopQRScanner();
+                try {
+                  // Attempt to parse as JSON
+                  const parsedData = JSON.parse(code.data);
+                  scannerStatus.innerText = "QR Code detected: Magnetism questions loaded.";
+                  alert(`Scanned Magnetism questions: ${JSON.stringify(parsedData, null, 2)}`);
+                  // Optionally process the questions (e.g., render on learning.html)
+                } catch (e) {
+                  // Fallback for non-JSON data (e.g., URLs)
+                  scannerStatus.innerText = `QR Code detected: ${code.data}`;
+                  alert(`Scanned QR code: ${code.data}`);
+                }
+              } else {
+                requestAnimationFrame(scan);
+              }
+            } else {
+              requestAnimationFrame(scan);
+            }
+          }
+          requestAnimationFrame(scan);
+        })
+        .catch(error => {
+          scannerStatus.innerText = "Camera access denied or unavailable.";
+          console.error('Camera error:', error);
+        });
+    }
+
+    function stopQRScanner() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      scanning = false;
+      scannerModal.classList.add("hidden");
+      scannerVideo.srcObject = null;
+    }
+
+    // Global Scan Button
     globalScanBtn.addEventListener("click", () => {
-      console.log("Initiate global QR code scan for staged topics:", stagedTopics);
-      // Replace with actual QR scanner logic
+      startQRScanner();
+    });
+
+    // Close Scanner Button
+    closeScannerBtn.addEventListener("click", () => {
+      stopQRScanner();
     });
 
     // Toggle between Options and Download views
