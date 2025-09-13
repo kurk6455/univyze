@@ -173,7 +173,7 @@
                 if (response.data && response.data.token) {
                     console.log(response.data.token);
                     localStorage.setItem('token', response.data.token);
-                    window.location.href = '/learning.html';  // Redirect to dashboard/landing after login
+                    window.location.href = '/landing.html';  // Redirect to dashboard/landing after login
                 }
             } catch (error) {
                 if (!error.response) {
