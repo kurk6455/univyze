@@ -1,549 +1,885 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WorkConnect Marketplace</title>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <style>
-    /* Basic Reset */
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f9fafb;
-      color: #333;
-    }
-    a, button {
-      cursor: pointer;
-    }
-    /* Header */
-    header {
-      background: white;
-      border-bottom: 1px solid #ddd;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    header h1 {
-      color: #2563eb;
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    header .auth-buttons button {
-      margin-left: 1rem;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      border: none;
-      font-weight: 600;
-      transition: background-color 0.3s;
-    }
-    header .auth-buttons .signup {
-      background: #2563eb;
-      color: white;
-    }
-    header .auth-buttons .signup:hover {
-      background: #1e40af;
-    }
-    header .auth-buttons .login {
-      background: transparent;
-      color: #555;
-    }
-    header .auth-buttons .login:hover {
-      color: #111;
-    }
-    /* Hero */
-    .hero {
-      background: linear-gradient(90deg, #2563eb, #7c3aed);
-      color: white;
-      text-align: center;
-      padding: 3rem 1rem 4rem;
-    }
-    .hero h2 {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .hero p {
-      font-size: 1.25rem;
-      margin-bottom: 2rem;
-    }
-    .tabs {
-      display: inline-flex;
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
-    }
-    .tab-btn {
-      padding: 0.75rem 2rem;
-      border: none;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: white;
-      color: #4b5563;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    .tab-btn.active {
-      background: #2563eb;
-      color: white;
-    }
-    .tab-btn:hover:not(.active) {
-      color: #2563eb;
-    }
- 
-    main {
-      max-width: 1100px;
-      margin: 2rem auto 4rem;
-      padding: 0 1rem;
-    }
-    /* Search and Filters */
-    .search-filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .search-box {
-      flex: 1 1 300px;
-      position: relative;
-    }
-    .search-box input {
-      width: 100%;
-      padding: 0.75rem 2.5rem 0.75rem 2.5rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border-color 0.3s;
-    }
-    .search-box input:focus {
-      border-color: #2563eb;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
-    }
-    .search-box .icon {
-      position: absolute;
-      left: 0.75rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #9ca3af;
-      font-size: 1.2rem;
-    }
-    .filter-btn {
-      padding: 0.75rem 1.5rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background: white;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 600;
-      color: #374151;
-      transition: background-color 0.3s, border-color 0.3s;
-    }
-    .filter-btn:hover {
-      background: #f3f4f6;
-      border-color: #2563eb;
-      color: #2563eb;
-    }
- 
-    .filters-panel {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 1rem 1.5rem;
-      margin-top: 1rem;
-    }
-    .filters-panel h3 {
-      margin-top: 0;
-      margin-bottom: 0.75rem;
-      font-weight: 700;
-      color: #2563eb;
-    }
-    .categories {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 0.75rem;
-    }
-    .category-btn {
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-      background: #f3f4f6;
-      color: #374151;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    .category-btn.active {
-      background: #bfdbfe;
-      color: #1e40af;
-    }
-    .category-btn:hover:not(.active) {
-      background: #e0e7ff;
-      color: #1e40af;
-    }
-   
-    .verification-info {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 8px;
-      padding: 1rem 1.5rem;
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-      margin-bottom: 2rem;
-    }
-    .verification-info .icon {
-      font-size: 1.5rem;
-      color: #2563eb;
-      margin-top: 0.25rem;
-    }
-    .verification-info h3 {
-      margin: 0 0 0.25rem;
-      color: #1e40af;
-    }
-    .verification-info p {
-      margin: 0;
-      font-size: 0.9rem;
-      color: #2563eb;
-    }
- 
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-    }
-    .card {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
-      transition: box-shadow 0.3s;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .card:hover {
-      box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
-    }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1rem;
-    }
-    .freelancer-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    .avatar {
-      width: 48px;
-      height: 48px;
-      background: #bfdbfe;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #2563eb;
-      font-weight: bold;
-      font-size: 1.5rem;
-      user-select: none;
-    }
-    .freelancer-name {
-      font-weight: 700;
-      font-size: 1.1rem;
-      margin: 0;
-    }
-    .freelancer-profession {
-      font-size: 0.9rem;
-      color: #6b7280;
-      margin: 0;
-    }
-    .verified-icon {
-      color: #16a34a;
-      font-size: 1.2rem;
-      margin-left: 0.5rem;
-    }
-    .rating-availability {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-    }
-    .rating {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      color: #fbbf24;
-      font-weight: 600;
-    }
-    .rating .star {
-      font-size: 1rem;
-    }
-    .availability {
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      user-select: none;
-    }
-    .available {
-      background: #dcfce7;
-      color: #166534;
-    }
-    .not-available {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-    .location-rate {
-      display: flex;
-      gap: 0.5rem;
-      font-size: 0.9rem;
-      color: #6b7280;
-      margin-bottom: 1rem;
-      align-items: center;
-    }
-    .skills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .skill-badge {
-      background: #e5e7eb;
-      color: #374151;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.8rem;
-      user-select: none;
-    }
-    .btn-primary {
-      background: #2563eb;
-      color: white;
-      border: none;
-      padding: 0.75rem;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: background-color 0.3s;
-      width: 100%;
-    }
-    .btn-primary:hover {
-      background: #1e40af;
-    }
-  
-    .job-card-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.75rem;
-    }
-    .job-title {
-      font-weight: 700;
-      font-size: 1.1rem;
-      margin: 0 0 0.25rem 0;
-    }
-    .job-meta {
-      display: flex;
-      gap: 1rem;
-      font-size: 0.85rem;
-      color: #6b7280;
-      flex-wrap: wrap;
-    }
-    .job-category {
-      background: #bfdbfe;
-      color: #1e40af;
-      padding: 0.15rem 0.5rem;
-      border-radius: 9999px;
-      font-weight: 600;
-      user-select: none;
-    }
-    .job-budget {
-      font-weight: 700;
-      color: #16a34a;
-      font-size: 1rem;
-      margin-bottom: 0.25rem;
-    }
-    .job-urgency {
-      font-weight: 600;
-      font-size: 0.8rem;
-      user-select: none;
-    }
-    .urgency-urgent {
-      color: #dc2626;
-    }
-    .urgency-moderate {
-      color: #ea580c;
-    }
-    .urgency-low {
-      color: #16a34a;
-    }
-    .job-description {
-      font-size: 0.95rem;
-      color: #374151;
-      margin-bottom: 1rem;
-    }
-    .job-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.9rem;
-      color: #6b7280;
-    }
-    .client-rating {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      color: #fbbf24;
-      font-weight: 600;
-    }
-    .client-rating .star {
-      font-size: 1rem;
-    }
-  
-    .verification-process {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 6px rgb(0 0 0 / 0.1);
-      padding: 2rem 1rem;
-      max-width: 900px;
-      margin: 3rem auto 4rem;
-    }
-    .verification-process h2 {
-      text-align: center;
-      font-weight: 700;
-      margin-bottom: 2rem;
-      color: #2563eb;
-    }
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 2rem;
-    }
-    .step {
-      text-align: center;
-    }
-    .step-circle {
-      width: 56px;
-      height: 56px;
-      background: #bfdbfe;
-      border-radius: 50%;
-      margin: 0 auto 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.5rem;
-      color: #2563eb;
-      user-select: none;
-    }
-    .step h3 {
-      margin: 0 0 0.5rem;
-      font-weight: 700;
-    }
-    .step p {
-      margin: 0;
-      color: #4b5563;
-      font-size: 0.9rem;
-    }
-   
-    @media (max-width: 600px) {
-      .search-filters {
-        flex-direction: column;
-      }
-      .tabs {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Univyze - Freelancer Opportunities</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        a, button {
+            cursor: pointer;
+        }
+        header {
+            background: white;
+            border-bottom: 1px solid #ddd;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            color: #2563eb;
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        header .auth-buttons button {
+            margin-left: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        header .auth-buttons .signup {
+            background: #2563eb;
+            color: white;
+        }
+        header .auth-buttons .signup:hover {
+            background: #1e40af;
+        }
+        header .auth-buttons .login {
+            background: transparent;
+            color: #555;
+        }
+        header .auth-buttons .login:hover {
+            color: #111;
+        }
+        .upgrade-container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+            margin: 2rem auto;
+        }
+        .main-content {
+            display: none;
+            max-width: 1200px;
+            margin: 2rem auto 4rem;
+            padding: 0 1rem;
+        }
+        .teacher-dashboard {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem;
+            margin: 2rem auto;
+        }
+        .teacher-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .student-card, .review-card {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .review-card {
+            border-left: 4px solid #2563eb;
+        }
+        .rating-stars {
+            color: #fbbf24;
+            font-size: 1.2rem;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background: #1e40af;
+        }
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        .hero {
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            color: white;
+            text-align: center;
+            padding: 3rem 1rem 4rem;
+        }
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .tabs {
+            display: inline-flex;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+        }
+        .tab-btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: white;
+            color: #4b5563;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tab-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+        .tab-btn:hover:not(.active) {
+            color: #2563eb;
+        }
+        .search-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .search-box {
+            flex: 1 1 300px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .search-box input:focus {
+            border-color: #2563eb;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+        }
+        .search-box .icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 1.2rem;
+        }
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .filter-btn:hover {
+            background: #f3f4f6;
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+        .filters-panel {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-top: 1rem;
+        }
+        .filters-panel h3 {
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            color: #2563eb;
+        }
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+        .category-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: #f3f4f6;
+            color: #374151;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .category-btn.active {
+            background: #bfdbfe;
+            color: #1e40af;
+        }
+        .category-btn:hover:not(.active) {
+            background: #e0e7ff;
+            color: #1e40af;
+        }
+        .verification-info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+        }
+        .verification-info .icon {
+            font-size: 1.5rem;
+            color: #2563eb;
+            margin-top: 0.25rem;
+        }
+        .verification-info h3 {
+            margin: 0 0 0.25rem;
+            color: #1e40af;
+        }
+        .verification-info p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #2563eb;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+            transition: box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card:hover {
+            box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        .freelancer-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .avatar {
+            width: 48px;
+            height: 48px;
+            background: #bfdbfe;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2563eb;
+            font-weight: bold;
+            font-size: 1.5rem;
+            user-select: none;
+        }
+        .freelancer-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        .freelancer-profession {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin: 0;
+        }
+        .verified-icon {
+            color: #16a34a;
+            font-size: 1.2rem;
+            margin-left: 0.5rem;
+        }
+        .rating-availability {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #fbbf24;
+            font-weight: 600;
+        }
+        .rating .star {
+            font-size: 1rem;
+        }
+        .availability {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            user-select: none;
+        }
+        .available {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .not-available {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .location-rate {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+        .skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .skill-badge {
+            background: #e5e7eb;
+            color: #374151;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            user-select: none;
+        }
+        .job-card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+        .job-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 0 0 0.25rem 0;
+        }
+        .job-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #6b7280;
+            flex-wrap: wrap;
+        }
+        .job-category {
+            background: #bfdbfe;
+            color: #1e40af;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            user-select: none;
+        }
+        .job-budget {
+            font-weight: 700;
+            color: #16a34a;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        .job-urgency {
+            font-weight: 600;
+            font-size: 0.8rem;
+            user-select: none;
+        }
+        .urgency-urgent {
+            color: #dc2626;
+        }
+        .urgency-moderate {
+            color: #ea580c;
+        }
+        .urgency-low {
+            color: #16a34a;
+        }
+        .job-description {
+            font-size: 0.95rem;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+        .job-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        .client-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #fbbf24;
+            font-weight: 600;
+        }
+        .client-rating .star {
+            font-size: 1rem;
+        }
+        .verification-process {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 6px rgb(0 0 0 / 0.1);
+            padding: 2rem 1rem;
+            max-width: 900px;
+            margin: 3rem auto 4rem;
+        }
+        .verification-process h2 {
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: #2563eb;
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+        }
+        .step {
+            text-align: center;
+        }
+        .step-circle {
+            width: 56px;
+            height: 56px;
+            background: #bfdbfe;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #2563eb;
+            user-select: none;
+        }
+        .step h3 {
+            margin: 0 0 0.5rem;
+            font-weight: 700;
+        }
+        .step p {
+            margin: 0;
+            color: #4b5563;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 600px) {
+            .search-filters {
+                flex-direction: column;
+            }
+            .tabs {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>ConnectWithwork</h1>
-    <div class="auth-buttons">
-      <button class="signup">Sign Up</button>
-      <button class="login">Login</button>
-    </div>
-  </header>
-
-  <section class="hero">
-    <h2>Find Perfect Work Opportunities</h2>
-    <p>Connect with verified professionals or find your next gig</p>
-    <div class="tabs" role="tablist" aria-label="Marketplace Tabs">
-      <button class="tab-btn active" data-tab="find-worker" role="tab" aria-selected="true" aria-controls="find-worker-panel" id="find-worker-tab">
-        &#128100; Find Worker
-      </button>
-      <button class="tab-btn" data-tab="find-work" role="tab" aria-selected="false" aria-controls="find-work-panel" id="find-work-tab">
-        &#128188; Find Work
-      </button>
-    </div>
-  </section>
-
-  <main>
-    <div class="search-filters">
-      <div class="search-box">
-        <span class="icon">&#128269;</span>
-        <input type="text" id="search-input" placeholder="Search for skills, professions, or names..." aria-label="Search" />
-      </div>
-      <button class="filter-btn" id="toggle-filters" aria-expanded="false" aria-controls="filters-panel">&#128722; Filters</button>
-    </div>
-
-    <div class="filters-panel" id="filters-panel" hidden>
-      <h3>Categories</h3>
-      <div class="categories" role="list">
-        <!-- Categories buttons inserted by JS -->
-      </div>
-    </div>
-
-    <section class="verification-info" aria-label="Verification Information">
-      <span class="icon">&#128274;</span>
-      <div>
-        <h3>Verified Professionals</h3>
-        <p>All our professionals undergo strict verification including Aadhaar, PAN card, and background checks to ensure quality and trust.</p>
-      </div>
-    </section>
-
-    <section id="find-worker-panel" role="tabpanel" aria-labelledby="find-worker-tab">
-      <h2>Available Freelancers</h2>
-      <div class="cards-grid" id="freelancers-list">
-        <!-- Freelancer cards inserted by JS -->
-      </div>
-    </section>
-
-    <section id="find-work-panel" role="tabpanel" aria-labelledby="find-work-tab" hidden>
-      <h2>Available Jobs</h2>
-      <div id="jobs-list">
-       
-      </div>
-    </section>
-
-    <section class="verification-process" aria-label="Verification Process">
-      <h2>How Verification Works</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="step-circle">1</div>
-          <h3>Document Submission</h3>
-          <p>Upload your Aadhaar card, PAN card, and other required documents for verification</p>
+    <header>
+        <h1>Univyze</h1>
+        <div class="auth-buttons">
+            <button class="signup">Sign Up</button>
+            <button class="login">Login</button>
         </div>
-        <div class="step">
-          <div class="step-circle">2</div>
-          <h3>Background Check</h3>
-          <p>Our team verifies your documents and conducts background checks for authenticity</p>
+    </header>
+
+    <div class="upgrade-container" id="upgradeContainer">
+        <h2 class="text-2xl font-bold text-indigo-700 mb-6">Become a Teacher</h2>
+        <p class="text-gray-600 mb-8">Unlock the ability to teach and mentor students by upgrading to a teacher account!</p>
+        <button class="btn-primary" id="upgradeBtn">Upgrade to a Teacher Account</button>
+        <a href="./index.html" class="btn-secondary mt-4 inline-block">Back to Home</a>
+    </div>
+
+    <main class="main-content" id="mainContent">
+        <section class="hero">
+            <h2>Find Perfect Work Opportunities</h2>
+            <p>Connect with verified professionals or find your next gig</p>
+            <div class="tabs" role="tablist" aria-label="Marketplace Tabs">
+                <button class="tab-btn active" data-tab="find-worker" role="tab" aria-selected="true" aria-controls="find-worker-panel" id="find-worker-tab">
+                    &#128100; Find Worker
+                </button>
+                <button class="tab-btn" data-tab="find-work" role="tab" aria-selected="false" aria-controls="find-work-panel" id="find-work-tab">
+                    &#128188; Find Work
+                </button>
+            </div>
+        </section>
+
+        <div class="search-filters">
+            <div class="search-box">
+                <span class="icon">&#128269;</span>
+                <input type="text" id="search-input" placeholder="Search for skills, professions, or names..." aria-label="Search" />
+            </div>
+            <button class="filter-btn" id="toggle-filters" aria-expanded="false" aria-controls="filters-panel">&#128722; Filters</button>
         </div>
-        <div class="step">
-          <div class="step-circle">3</div>
-          <h3>Verification Badge</h3>
-          <p>Get verified badge and start connecting with clients confidently</p>
+
+        <div class="filters-panel" id="filters-panel" hidden>
+            <h3>Categories</h3>
+            <div class="categories" role="list">
+                <!-- Categories buttons inserted by JS -->
+            </div>
         </div>
-      </div>
+
+        <section class="verification-info" aria-label="Verification Information">
+            <span class="icon">&#128274;</span>
+            <div>
+                <h3>Verified Professionals</h3>
+                <p>All our professionals undergo strict verification including Aadhaar, PAN card, and background checks to ensure quality and trust.</p>
+            </div>
+        </section>
+
+        <section id="find-worker-panel" role="tabpanel" aria-labelledby="find-worker-tab">
+            <h2>Available Freelancers</h2>
+            <div class="cards-grid" id="freelancers-list">
+                <!-- Freelancer cards inserted by JS -->
+            </div>
+        </section>
+
+        <section id="find-work-panel" role="tabpanel" aria-labelledby="find-work-tab" hidden>
+            <h2>Available Jobs</h2>
+            <div id="jobs-list">
+                <!-- Job cards inserted by JS -->
+            </div>
+        </section>
+
+        <section class="verification-process" aria-label="Verification Process">
+            <h2>How Verification Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-circle">1</div>
+                    <h3>Document Submission</h3>
+                    <p>Upload your Aadhaar card, PAN card, and other required documents for verification</p>
+                </div>
+                <div class="step">
+                    <div class="step-circle">2</div>
+                    <h3>Background Check</h3>
+                    <p>Our team verifies your documents and conducts background checks for authenticity</p>
+                </div>
+                <div class="step">
+                    <div class="step-circle">3</div>
+                    <h3>Verification Badge</h3>
+                    <p>Get verified badge and start connecting with clients confidently</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <section class="teacher-dashboard" id="teacherDashboard">
+        <div class="teacher-card flex flex-col md:flex-row items-center gap-6">
+            <img id="teacherAvatar" src="https://via.placeholder.com/80" class="w-20 h-20 rounded-full border object-cover" alt="Teacher avatar" />
+            <div class="flex-1 text-center md:text-left">
+                <h2 id="teacherName" class="text-xl font-semibold text-indigo-700">Teacher Name</h2>
+                <div class="rating-stars">★★★★★</div>
+                <p class="text-gray-600">Rating: <span id="teacherRating">0.0</span> / 5</p>
+            </div>
+            <a href="./dashboard.html" class="btn-primary">Back to Dashboard</a>
+        </div>
+
+        <div class="teacher-card">
+            <h3 class="text-lg font-semibold text-indigo-700 mb-4">Students You Are Teaching</h3>
+            <div class="students-grid" id="studentsList">
+                <!-- Student cards inserted by JS -->
+            </div>
+        </div>
+
+        <div class="teacher-card">
+            <h3 class="text-lg font-semibold text-indigo-700 mb-4">Student Reviews</h3>
+            <div id="reviewsList">
+                <!-- Review cards inserted by JS -->
+            </div>
+        </div>
     </section>
-  </main>
+
+    <script>
+        const categories = [
+            "Web Development", "Graphic Design", "Content Writing", "Digital Marketing",
+            "Data Analysis", "Mobile App Development", "Video Editing", "SEO"
+        ];
+
+        const freelancers = [
+            {
+                name: "John Doe",
+                profession: "Web Developer",
+                verified: true,
+                rating: 4.8,
+                available: true,
+                location: "Mumbai, IN",
+                rate: "₹2000/hr",
+                skills: ["HTML", "CSS", "JavaScript", "React"],
+                avatar: "https://via.placeholder.com/48"
+            },
+            {
+                name: "Jane Smith",
+                profession: "Graphic Designer",
+                verified: true,
+                rating: 4.5,
+                available: false,
+                location: "Delhi, IN",
+                rate: "₹1500/hr",
+                skills: ["Photoshop", "Illustrator", "UI/UX"],
+                avatar: "https://via.placeholder.com/48"
+            }
+        ];
+
+        const jobs = [
+            {
+                title: "Build an E-commerce Website",
+                category: "Web Development",
+                budget: "₹50,000",
+                urgency: "urgent",
+                description: "Need a fully functional e-commerce site with payment integration.",
+                clientRating: 4.7,
+                posted: "2 days ago"
+            },
+            {
+                title: "Create Social Media Graphics",
+                category: "Graphic Design",
+                budget: "₹10,000",
+                urgency: "moderate",
+                description: "Design 10 social media posts for a marketing campaign.",
+                clientRating: 4.3,
+                posted: "5 days ago"
+            }
+        ];
+
+        function renderCategories() {
+            const categoriesContainer = $('.categories');
+            categoriesContainer.empty();
+            categories.forEach(category => {
+                categoriesContainer.append(`
+                    <button class="category-btn" data-category="${category.toLowerCase().replace(/\s+/g, '-')}">
+                        ${category}
+                    </button>
+                `);
+            });
+        }
+
+        function renderFreelancers(filter = '') {
+            const list = $('#freelancers-list');
+            list.empty();
+            freelancers
+                .filter(f => !filter || f.skills.some(s => s.toLowerCase().includes(filter.toLowerCase())) || f.name.toLowerCase().includes(filter.toLowerCase()))
+                .forEach(f => {
+                    list.append(`
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="freelancer-info">
+                                    <div class="avatar" style="background-image: url('${f.avatar}')">${f.name[0]}</div>
+                                    <div>
+                                        <h3 class="freelancer-name">${f.name}${f.verified ? '<span class="verified-icon">✓</span>' : ''}</h3>
+                                        <p class="freelancer-profession">${f.profession}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rating-availability">
+                                <div class="rating">${'★'.repeat(Math.round(f.rating))} <span>(${f.rating})</span></div>
+                                <span class="availability ${f.available ? 'available' : 'not-available'}">${f.available ? 'Available' : 'Not Available'}</span>
+                            </div>
+                            <div class="location-rate">
+                                <span>📍 ${f.location}</span>
+                                <span>${f.rate}</span>
+                            </div>
+                            <div class="skills">
+                                ${f.skills.map(skill => `<span class="skill-badge">${skill}</span>`).join('')}
+                            </div>
+                            <button class="btn-primary">Contact</button>
+                        </div>
+                    `);
+                });
+        }
+
+        function renderJobs(filter = '') {
+            const list = $('#jobs-list');
+            list.empty();
+            jobs
+                .filter(j => !filter || j.category.toLowerCase().includes(filter.toLowerCase()) || j.title.toLowerCase().includes(filter.toLowerCase()))
+                .forEach(j => {
+                    list.append(`
+                        <div class="card">
+                            <div class="job-card-header">
+                                <div>
+                                    <h3 class="job-title">${j.title}</h3>
+                                    <div class="job-meta">
+                                        <span class="job-category">${j.category}</span>
+                                        <span>Posted ${j.posted}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="job-budget">${j.budget}</div>
+                            <div class="job-urgency urgency-${j.urgency}">${j.urgency.charAt(0).toUpperCase() + j.urgency.slice(1)}</div>
+                            <p class="job-description">${j.description}</p>
+                            <div class="job-footer">
+                                <div class="client-rating">${'★'.repeat(Math.round(j.clientRating))} (${j.clientRating})</div>
+                                <button class="btn-primary">Apply</button>
+                            </div>
+                        </div>
+                    `);
+                });
+        }
+
+        async function checkTeacherStatus() {
+            const token = localStorage.getItem('token');
+            if (!token) return false;
+            try {
+                const response = await axios.get('/api/user', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                return response.data.role === 'Teacher';
+            } catch (error) {
+                console.error('Error checking teacher status:', error);
+                return false;
+            }
+        }
+
+        async function loadTeacherDashboard() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in to access the teacher dashboard.');
+                window.location.href = './signin.html';
+                return;
+            }
+            try {
+                const [userResponse, studentsResponse, reviewsResponse] = await Promise.all([
+                    axios.get('/api/user', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/teacher/students', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/teacher/reviews', { headers: { Authorization: `Bearer ${token}` } })
+                ]);
+
+                const user = userResponse.data;
+                const students = studentsResponse.data || [];
+                const reviews = reviewsResponse.data || [];
+
+                document.getElementById('teacherName').textContent = user.name || 'Teacher';
+                document.getElementById('teacherAvatar').src = user.avatar || 'https://via.placeholder.com/80';
+                document.getElementById('teacherRating').textContent = user.rating ? user.rating.toFixed(1) : '0.0';
+
+                const studentsList = document.getElementById('studentsList');
+                studentsList.innerHTML = students.length
+                    ? students.map(student => `
+                        <div class="student-card">
+                            <img src="${student.avatar || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded-full mx-auto mb-2" alt="${student.name} avatar" />
+                            <p class="font-medium">${student.name}</p>
+                            <p class="text-sm text-gray-600">${student.subject}</p>
+                        </div>`).join('')
+                    : '<p class="text-gray-600 text-center">No students assigned yet.</p>';
+
+                const reviewsList = document.getElementById('reviewsList');
+                reviewsList.innerHTML = reviews.length
+                    ? reviews.map(review => `
+                        <div class="review-card mb-3">
+                            <p class="font-medium">${review.studentName}</p>
+                            <div class="rating-stars">${'★'.repeat(Math.round(review.rating))}${'☆'.repeat(5 - Math.round(review.rating))}</div>
+                            <p class="text-sm text-gray-600">${review.comment}</p>
+                        </div>`).join('')
+                    : '<p class="text-gray-600 text-center">No reviews yet.</p>';
+
+                document.getElementById('upgradeContainer').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('teacherDashboard').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading teacher dashboard:', error);
+                alert('Failed to load teacher dashboard.');
+            }
+        }
+
+        document.getElementById('upgradeBtn').addEventListener('click', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in to upgrade your account.');
+                window.location.href = './signin.html';
+                return;
+            }
+            try {
+                await axios.put('/api/user', { role: 'Teacher' }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                alert('Successfully upgraded to a teacher account!');
+                loadTeacherDashboard();
+            } catch (error) {
+                console.error('Error upgrading account:', error);
+                alert('Failed to upgrade account. Please try again.');
+            }
+        });
+
+        $(document).ready(function () {
+            renderCategories();
+            renderFreelancers();
+            renderJobs();
+
+            $('#search-input').on('input', function () {
+                const filter = $(this).val();
+                renderFreelancers(filter);
+                renderJobs(filter);
+            });
+
+            $('.tabs .tab-btn').on('click', function () {
+                $('.tab-btn').removeClass('active').attr('aria-selected', 'false');
+                $(this).addClass('active').attr('aria-selected', 'true');
+                $('#find-worker-panel, #find-work-panel').prop('hidden', true);
+                $(`#${$(this).data('tab')}-panel`).prop('hidden', false);
+            });
+
+            $('#toggle-filters').on('click', function () {
+                const panel = $('#filters-panel');
+                const isHidden = panel.prop('hidden');
+                panel.prop('hidden', !isHidden);
+                $(this).attr('aria-expanded', isHidden);
+            });
+
+            $(document).on('click', '.category-btn', function () {
+                $('.category-btn').removeClass('active');
+                $(this).addClass('active');
+                const filter = $(this).data('category').replace(/-/g, ' ');
+                renderFreelancers(filter);
+                renderJobs(filter);
+            });
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                const isTeacher = await checkTeacherStatus();
+                if (isTeacher) {
+                    loadTeacherDashboard();
+                } else {
+                    document.getElementById('upgradeContainer').style.display = 'block';
+                    document.getElementById('mainContent').style.display = 'block';
+                    document.getElementById('teacherDashboard').style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
+</html>

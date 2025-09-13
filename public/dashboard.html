@@ -1,20 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Univyze Dashboard — Full</title>
-
-    <!-- Tailwind + Font -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-
-    <!-- Libs -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -24,26 +17,21 @@
             background-size: cover;
             min-height: 100vh;
         }
-
         .soft-card {
             background: #fff;
             border-radius: 14px;
             box-shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
         }
-
         .xp-circle {
             transform: rotate(-90deg);
         }
-
         .min-w-0 {
             min-width: 0;
         }
-
         button:hover {
             filter: brightness(0.9);
             transition: filter 0.2s ease-in-out;
         }
-
         .loading {
             display: inline-block;
             width: 20px;
@@ -53,12 +41,10 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
         .error-banner {
             background: #fee2e2;
             color: #dc2626;
@@ -67,21 +53,34 @@
             text-align: center;
             font-size: 14px;
         }
+        .role-pill {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .role-student {
+            background: #bfdbfe;
+            color: #1e40af;
+        }
+        .role-teacher {
+            background: #dcfce7;
+            color: #166534;
+        }
     </style>
 </head>
-
 <body class="min-h-screen flex">
     <main class="flex-1 max-w-7xl mx-auto px-4 py-8 grid lg:grid-cols-12 gap-6 w-full">
         <aside class="lg:col-span-3 col-span-12 soft-card p-6 flex flex-col gap-6">
             <div class="flex flex-col items-center gap-3">
-                <img id="userAvatar" src="https://via.placeholder.com/100"
-                    class="w-24 h-24 rounded-full border object-cover" alt="User avatar">
+                <img id="userAvatar" src="https://via.placeholder.com/100" class="w-24 h-24 rounded-full border object-cover" alt="User avatar">
                 <div class="text-center">
                     <div id="userName" class="font-semibold text-lg">User</div>
-                    <div id="userRole" class="text-xs text-gray-500">Member</div>
+                    <div id="userRole" class="text-xs text-gray-500 role-pill role-student">Student</div>
                 </div>
             </div>
-
             <div class="grid grid-cols-3 gap-3 text-center">
                 <div>
                     <div class="text-sm text-gray-500">Crowns</div>
@@ -96,7 +95,6 @@
                     <div id="statGems" class="font-bold text-pink-500">0</div>
                 </div>
             </div>
-
             <div>
                 <div class="flex justify-between text-xs text-gray-500 mb-1">
                     <span>Daily XP</span>
@@ -106,30 +104,21 @@
                     <div id="xpProgressFill" class="bg-indigo-600 h-2 rounded-full w-0"></div>
                 </div>
             </div>
-
             <div id="nextBadgeCard" class="bg-indigo-50 text-indigo-700 p-3 rounded-lg text-sm font-medium">
                 🎯 Next Badge: Starter (50 XP)
             </div>
-
             <div>
                 <h4 class="text-xs font-semibold text-gray-500 mb-1">Last 7 Days</h4>
                 <div id="streakHeatmap" class="flex gap-1 justify-center"></div>
             </div>
-
             <div id="tipBox" class="italic text-sm text-gray-600">
                 “Consistency beats intensity.”
             </div>
-
             <div id="dailyChallenge" class="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-sm font-medium">
                 🎯 Challenge: Complete 2 lessons today!
             </div>
-
-            <button id="completeLessonBtn"
-                class="mt-2 w-full bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-700 transition">+10 XP
-                Lesson</button>
-            <button id="syncBtn"
-                class="w-full border border-indigo-200 rounded-lg py-2 text-indigo-600 hover:bg-indigo-100 transition">Sync</button>
-
+            <button id="completeLessonBtn" class="mt-2 w-full bg-indigo-600 text-white rounded-lg py-2 hover:bg-indigo-700 transition">+10 XP Lesson</button>
+            <button id="syncBtn" class="w-full border border-indigo-200 rounded-lg py-2 text-indigo-600 hover:bg-indigo-100 transition">Sync</button>
             <div class="mt-4 grid grid-cols-2 gap-3 text-left text-sm bg-gray-50 p-3 rounded-lg min-w-0">
                 <div>
                     <label class="block text-gray-400 text-xs">Email</label>
@@ -168,21 +157,16 @@
                     <div id="sideProfileStream" class="font-medium">—</div>
                 </div>
             </div>
-
-            <button id="editProfileBtn"
-                class="mt-2 w-full bg-emerald-100 text-emerald-700 rounded-lg py-2 hover:bg-emerald-200 transition">✏️
-                Edit Profile</button>
-
+            <button id="editProfileBtn" class="mt-2 w-full bg-emerald-100 text-emerald-700 rounded-lg py-2 hover:bg-emerald-200 transition">✏️ Edit Profile</button>
             <div class="mt-4 grid grid-cols-1 gap-3 text-left text-sm bg-gray-50 p-3 rounded-lg min-w-0">
                 <a href="./options.html" class="text-indigo-600 hover:text-indigo-800 font-medium">Learning Options</a>
                 <a href="./freelancer.html" class="text-indigo-600 hover:text-indigo-800 font-medium">Freelancer Opportunities</a>
-                <a href="./findTeacher.html" class="text-indigo-600 hover:text-indigo-800 font-medium">Search Teacher</a>
+                <a href="./findTeacher.html" class="text-indigo-600 hover:text-indigo-800 font-medium">Find Teacher</a>
                 <a href="./counselling.html" class="text-indigo-600 hover:text-indigo-800 font-medium">Counseling</a>
                 <a href="./index.html" class="text-indigo-600 hover:text-indigo-800 font-medium">Home</a>
                 <button id="logoutBtn" class="text-left text-indigo-600 hover:text-indigo-800 font-medium">Logout</button>
             </div>
         </aside>
-
         <section class="lg:col-span-9 col-span-12 space-y-6">
             <div id="loadingBanner" class="text-center py-4">
                 <span class="loading"></span> Loading Dashboard...
@@ -195,27 +179,21 @@
                     <h1 class="text-2xl font-bold">Dashboard</h1>
                     <p id="welcomeLine" class="text-sm text-gray-600">Welcome</p>
                 </div>
-                <button id="editProfileHeaderBtn"
-                    class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full hidden md:inline-flex hover:bg-emerald-200 transition">✏️
-                    Edit Profile</button>
+                <button id="editProfileHeaderBtn" class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full hidden md:inline-flex hover:bg-emerald-200 transition">✏️ Edit Profile</button>
             </div>
-
             <div class="soft-card p-6">
                 <h3 class="font-semibold">Activity</h3>
                 <div class="mt-4 flex flex-col lg:flex-row items-center gap-6">
-                    <svg width="120" height="120" viewBox="0 0 120 120" class="xp-circle"
-                        aria-label="XP progress circle" role="img">
+                    <svg width="120" height="120" viewBox="0 0 120 120" class="xp-circle" aria-label="XP progress circle" role="img">
                         <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="12" fill="none" />
-                        <circle id="xpStroke" cx="60" cy="60" r="50" stroke="url(#grad)" stroke-width="12"
-                            stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314" fill="none" />
+                        <circle id="xpStroke" cx="60" cy="60" r="50" stroke="url(#grad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314" fill="none" />
                         <defs>
                             <linearGradient id="grad" x1="0" x2="1">
                                 <stop offset="0%" stop-color="#667eea" />
                                 <stop offset="100%" stop-color="#764ba2" />
                             </linearGradient>
                         </defs>
-                        <text id="xpLabel" x="60" y="65" text-anchor="middle" font-size="16" font-weight="600"
-                            fill="#4b5563">0%</text>
+                        <text id="xpLabel" x="60" y="65" text-anchor="middle" font-size="16" font-weight="600" fill="#4b5563">0%</text>
                     </svg>
                     <div>
                         <div id="dailyXpText" class="text-lg font-semibold">0 XP</div>
@@ -226,31 +204,25 @@
                     </div>
                 </div>
             </div>
-
             <div class="soft-card p-6">
                 <h3 class="font-semibold">Badges</h3>
                 <div id="badgesList" class="mt-3 flex flex-wrap gap-3"></div>
             </div>
-
             <div class="soft-card p-6">
                 <h3 class="font-semibold">Recent Learnings</h3>
                 <div id="recentList" class="mt-3 grid sm:grid-cols-2 gap-3"></div>
             </div>
-
             <div class="soft-card p-6">
                 <h3 class="font-semibold">Leaderboard</h3>
                 <div id="leaderboardList" class="mt-3 space-y-2"></div>
             </div>
-
             <div class="soft-card p-6">
                 <h3 class="font-semibold">My Courses</h3>
                 <div id="coursesList" class="mt-3 grid sm:grid-cols-2 gap-4"></div>
             </div>
         </section>
     </main>
-
-    <div id="editModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" role="dialog"
-        aria-modal="true" aria-labelledby="editProfileTitle">
+    <div id="editModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="editProfileTitle">
         <div class="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-auto shadow-lg">
             <div class="flex justify-between items-center mb-4">
                 <h3 id="editProfileTitle" class="text-lg font-semibold">Edit Profile</h3>
@@ -258,8 +230,7 @@
             </div>
             <div class="space-y-3">
                 <div class="flex items-center gap-3">
-                    <img id="modalAvatarPreview" src="https://via.placeholder.com/80"
-                        class="w-16 h-16 rounded-full object-cover border" alt="Avatar preview">
+                    <img id="modalAvatarPreview" src="https://via.placeholder.com/80" class="w-16 h-16 rounded-full object-cover border" alt="Avatar preview">
                     <div class="flex-1">
                         <label for="editAvatar" class="text-xs text-gray-500">Avatar</label>
                         <input id="editAvatar" type="file" accept="image/*" class="w-full text-xs mt-1" />
@@ -271,7 +242,10 @@
                 </div>
                 <div>
                     <label for="editRole" class="text-xs text-gray-400">Role</label>
-                    <input id="editRole" class="w-full mt-1 p-2 rounded border" />
+                    <select id="editRole" class="w-full mt-1 p-2 rounded border">
+                        <option value="Student">Student</option>
+                        <option value="Teacher">Teacher</option>
+                    </select>
                 </div>
                 <div>
                     <label for="editEmail" class="text-xs text-gray-400">Email</label>
@@ -313,20 +287,16 @@
                 </div>
             </div>
             <div class="flex justify-end gap-3 mt-4">
-                <button id="cancelEdit"
-                    class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 transition">Cancel</button>
-                <button id="saveEdit"
-                    class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">Save</button>
+                <button id="cancelEdit" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 transition">Cancel</button>
+                <button id="saveEdit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">Save</button>
             </div>
         </div>
     </div>
-
     <script>
-        // Fallback data for default page (Univyze-specific)
         const fallback = {
             user: {
                 name: "Demo User",
-                role: "Member",
+                role: "Student",
                 avatar: "",
                 email: "demo@univyze.com",
                 language: "English",
@@ -366,12 +336,11 @@
                 { title: "Career Counseling", progress: 15 }
             ]
         };
-        let data = { ...fallback }; // Start with fallback
+        let data = { ...fallback };
         let chart = null;
         let tipInterval = null;
         let fetchErrors = 0;
 
-        // Fetch user data
         async function fetchUserData() {
             const token = localStorage.getItem('token');
             if (!token) return;
@@ -386,7 +355,6 @@
             }
         }
 
-        // Fetch progress data
         async function fetchProgressData() {
             const token = localStorage.getItem('token');
             if (!token) return;
@@ -403,7 +371,6 @@
             }
         }
 
-        // Fetch courses
         async function fetchCourses() {
             const token = localStorage.getItem('token');
             if (!token) return;
@@ -418,7 +385,6 @@
             }
         }
 
-        // Fetch leaderboard
         async function fetchLeaderboard() {
             try {
                 const response = await axios.get('/api/leaderboard');
@@ -429,7 +395,6 @@
             }
         }
 
-        // Update XP circle
         function setXP(current, goal) {
             if (!data || typeof current === 'undefined') return;
             const percent = Math.min((current / goal) * 100, 100);
@@ -444,7 +409,6 @@
             if (xpGoal) xpGoal.textContent = goal;
         }
 
-        // Update progress bar
         function setProgressBar(current, goal) {
             if (!data || typeof current === 'undefined') return;
             const percent = Math.min((current / goal) * 100, 100);
@@ -454,7 +418,6 @@
             if (text) text.textContent = `${current} / ${goal}`;
         }
 
-        // Render heatmap
         function renderHeatmap() {
             if (!data || !data.activity) return;
             const heatmap = document.getElementById("streakHeatmap");
@@ -467,7 +430,6 @@
             });
         }
 
-        // Render activity chart
         function renderChart(activity) {
             if (!activity || activity.length === 0) return;
             const canvas = document.getElementById("activityChart");
@@ -498,7 +460,6 @@
             });
         }
 
-        // Render badges
         function renderBadges() {
             if (!data || !data.badges) return;
             const badgesList = document.getElementById("badgesList");
@@ -521,7 +482,6 @@
             if (nextCard) nextCard.textContent = `🎯 Next Badge: ${nextBadge.title} (${data.user.totalXP || 0}/${nextBadge.threshold} XP)`;
         }
 
-        // Render recent learnings
         function renderRecent() {
             if (!data || !data.recent) return;
             const recentList = document.getElementById("recentList");
@@ -536,7 +496,6 @@
             });
         }
 
-        // Render leaderboard
         function renderLeaderboard() {
             if (!data || !data.leaderboard) return;
             const leaderboardList = document.getElementById("leaderboardList");
@@ -552,7 +511,6 @@
             });
         }
 
-        // Render courses
         function renderCourses() {
             if (!data || !data.courses) return;
             const coursesList = document.getElementById("coursesList");
@@ -572,7 +530,6 @@
             });
         }
 
-        // Rotate tips
         function startRotateTips() {
             if (tipInterval) return;
             const tips = [
@@ -590,7 +547,6 @@
             }, 5000);
         }
 
-        // Main render function
         function render() {
             if (!data || !data.user) return;
             const u = data.user;
@@ -602,7 +558,10 @@
             const userName = document.getElementById("userName");
             if (userName) userName.textContent = u.name;
             const userRole = document.getElementById("userRole");
-            if (userRole) userRole.textContent = u.role;
+            if (userRole) {
+                userRole.textContent = u.role;
+                userRole.className = `text-xs text-gray-500 role-pill role-${u.role.toLowerCase()}`;
+            }
             const welcomeLine = document.getElementById("welcomeLine");
             if (welcomeLine) welcomeLine.textContent = `Welcome ${u.name}`;
 
@@ -649,7 +608,6 @@
             if (errorBanner) errorBanner.classList.toggle("hidden", fetchErrors === 0);
         }
 
-        // Handle lesson completion
         document.getElementById("completeLessonBtn").addEventListener("click", async () => {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -672,21 +630,19 @@
             }
         });
 
-        // Handle sync
         document.getElementById("syncBtn").addEventListener("click", async () => {
             fetchErrors = 0;
             await Promise.all([fetchUserData(), fetchProgressData(), fetchCourses(), fetchLeaderboard()]);
             render();
         });
 
-        // Handle profile edit
         function openModal() {
             document.getElementById("editModal").classList.remove("hidden");
             const u = data.user || {};
             const editName = document.getElementById("editName");
             if (editName) editName.value = u.name || "";
             const editRole = document.getElementById("editRole");
-            if (editRole) editRole.value = u.role || "";
+            if (editRole) editRole.value = u.role || "Student";
             const editEmail = document.getElementById("editEmail");
             if (editEmail) editEmail.value = u.email || "";
             const editLang = document.getElementById("editLang");
@@ -753,7 +709,6 @@
             }
         });
 
-        // Handle avatar upload
         document.getElementById("editAvatar").addEventListener("change", async (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -782,18 +737,16 @@
             }
         });
 
-        // Handle logout
         document.getElementById("logoutBtn").addEventListener("click", () => {
             localStorage.removeItem('token');
             window.location.href = './signin.html';
         });
 
-        // Initial load
         async function init() {
             const token = localStorage.getItem('token');
             if (!token) {
                 console.warn('No token found. Rendering default dashboard.');
-                fetchErrors = 4; // All fetches would fail
+                fetchErrors = 4;
                 render();
                 return;
             }
