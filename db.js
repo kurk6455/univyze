@@ -1,3 +1,4 @@
+// db.js
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -12,7 +13,15 @@ const usersSchema = new Schema({
     marks10: Number,
     school12: String,
     stream12: String,
-    marks12: Number
+    marks12: Number,
+    crowns: { type: Number, default: 0 },
+    streak: { type: Number, default: 0 },
+    gems: { type: Number, default: 0 },
+    totalXP: { type: Number, default: 0 },
+    dailyXP: { type: Number, default: 0 },
+    xpGoal: { type: Number, default: 50 },
+    avatar: { type: String, default: '' },
+    lastProgressDate: { type: Date, default: null }
 });
 
 const questionSchema = new Schema({
@@ -39,12 +48,20 @@ const progressSchema = new Schema({
     timestamp: { type: Date, default: Date.now }
 });
 
+const coursesSchema = new Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+    title: String,
+    progress: Number
+});
+
 const usersModel = mongoose.model('users', usersSchema);
 const Question = mongoose.model('Question', questionSchema);
 const Progress = mongoose.model('Progress', progressSchema);
+const Courses = mongoose.model('Courses', coursesSchema);
 
 module.exports = {
     usersModel,
     Question,
-    Progress
+    Progress,
+    Courses
 };

@@ -1,12 +1,14 @@
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
-const { usersModel, Question, Progress } = require('./db.js');
+const { usersModel, Question, Progress, Courses } = require('./db.js');
 const jwt = require('jsonwebtoken');
 const { authenticateJWT } = require('./auth.js');
 const bcrypt = require('bcrypt');
 const { z } = require('zod');
 const path = require('path');
 const axios = require('axios');
+const multer = require('multer');
 
 // Destructure env vars (undefined in Vercel if not set)
 const JWT_SECRETE = process.env.JWT_SECRETE;
@@ -34,6 +36,10 @@ mongoose.connect(mongooseClusterString)
 // Middlewares
 app.use(express.static(path.join(__dirname, '/public')));
 app.use(express.json());
+
+// Multer for avatar upload (memory storage for base64)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -211,6 +217,24 @@ app.post('/api/topic/:topic', authenticateJWT, async (req, res) => {
                 userAnswer,
                 topic
             });
+
+            // Update user's XP and streak if correct
+            if (isCorrect) {
+                const user = await usersModel.findById(req.userId);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (!user.lastProgressDate || new Date(user.lastProgressDate).setHours(0, 0, 0, 0) < today.getTime()) {
+                    user.streak = (user.streak || 0) + 1;
+                    user.dailyXP = xp;
+                } else {
+                    user.dailyXP = (user.dailyXP || 0) + xp;
+                }
+
+                user.totalXP = (user.totalXP || 0) + xp;
+                user.lastProgressDate = new Date();
+                await user.save();
+            }
         }
 
         // Fetch questions for the topic (lowercase for consistency)
@@ -291,6 +315,143 @@ app.post('/api/chat', authenticateJWT, async (req, res) => {
     }
 });
 
+// Dashboard endpoints
+
+// GET /api/user
+app.get('/api/user', authenticateJWT, async (req, res) => {
+    try {
+        const user = await usersModel.findById(req.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).json({ error: 'Failed to fetch user' });
+    }
+});
+
+// PUT /api/user
+app.put('/api/user', authenticateJWT, async (req, res) => {
+    try {
+        const updatedUser = await usersModel.findByIdAndUpdate(req.userId, req.body, { new: true });
+        res.json(updatedUser);
+    } catch (error) {
+        console.error('Update user error:', error);
+        res.status(500).json({ error: 'Failed to update user' });
+    }
+});
+
+// POST /api/user/avatar
+app.post('/api/user/avatar', authenticateJWT, upload.single('avatar'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const avatarBase64 = `data:image/${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        const user = await usersModel.findById(req.userId);
+        user.avatar = avatarBase64;
+        await user.save();
+        res.json({ avatarUrl: avatarBase64 });
+    } catch (error) {
+        console.error('Avatar upload error:', error);
+        res.status(500).json({ error: 'Failed to upload avatar' });
+    }
+});
+
+// GET /api/progress
+app.get('/api/progress', authenticateJWT, async (req, res) => {
+    try {
+        const progress = await Progress.find({ userId: req.userId }).sort({ timestamp: -1 });
+        const totalXP = progress.reduce((sum, p) => sum + (p.xp || 0), 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dailyXP = progress.filter(p => new Date(p.timestamp) >= today).reduce((sum, p) => sum + (p.xp || 0), 0);
+
+        // Activity: last 7 days XP
+        const activity = [];
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+        for (let i = 0; i < 7; i++) {
+            const day = new Date(sevenDaysAgo);
+            day.setDate(day.getDate() + i);
+            const nextDay = new Date(day);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const dayXP = progress.filter(p => new Date(p.timestamp) >= day && new Date(p.timestamp) < nextDay).reduce((sum, p) => sum + (p.xp || 0), 0);
+            activity.push(dayXP);
+        }
+
+        // Recent: last 2 progress with question prompt
+        const recentProgress = progress.slice(0, 2);
+        const recent = [];
+        for (let p of recentProgress) {
+            const q = await Question.findOne({ id: p.questionId });
+            recent.push({ title: q ? q.prompt : 'Lesson', xp: p.xp || 0 });
+        }
+
+        res.json({ dailyXP, totalXP, activity, recent });
+    } catch (error) {
+        console.error('Get progress error:', error);
+        res.status(500).json({ error: 'Failed to fetch progress' });
+    }
+});
+
+// POST /api/progress/complete
+app.post('/api/progress/complete', authenticateJWT, async (req, res) => {
+    const xpIncrement = req.body.xpIncrement || 10;
+    try {
+        const user = await usersModel.findById(req.userId);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (!user.lastProgressDate || new Date(user.lastProgressDate).setHours(0, 0, 0, 0) < today.getTime()) {
+            user.streak = (user.streak || 0) + 1;
+            user.dailyXP = xpIncrement;
+        } else {
+            user.dailyXP = (user.dailyXP || 0) + xpIncrement;
+        }
+
+        user.totalXP = (user.totalXP || 0) + xpIncrement;
+        user.lastProgressDate = new Date();
+        await user.save();
+
+        // Create a manual progress entry
+        await Progress.create({
+            userId: req.userId,
+            questionId: 'manual-lesson',
+            xp: xpIncrement,
+            isCorrect: true,
+            brains: 0,
+            userAnswer: 'completed',
+            topic: 'general'
+        });
+
+        res.json({ message: 'Progress updated' });
+    } catch (error) {
+        console.error('Complete progress error:', error);
+        res.status(500).json({ error: 'Failed to complete progress' });
+    }
+});
+
+// GET /api/courses
+app.get('/api/courses', authenticateJWT, async (req, res) => {
+    try {
+        const courses = await Courses.find({ userId: req.userId });
+        res.json(courses);
+    } catch (error) {
+        console.error('Get courses error:', error);
+        res.status(500).json({ error: 'Failed to fetch courses' });
+    }
+});
+
+// GET /api/leaderboard
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const leaders = await usersModel.find().sort({ totalXP: -1 }).limit(5).select('fullname totalXP');
+        res.json(leaders.map(l => ({ name: l.fullname, xp: l.totalXP })));
+    } catch (error) {
+        console.error('Get leaderboard error:', error);
+        res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    }
+});
+
 // Initialize questions (run once or on startup if collection is empty)
 async function initializeQuestions() {
     const topics = ['magnetism', 'electricity', 'waves', 'optics', 'thermodynamics', 'biology', 'genetics', 'evolution', 'chemistry', 'organic chemistry', 'algebra', 'geometry', 'trigonometry', 'calculus', 'probability', 'history', 'geography', 'civics', 'economics', 'philosophy'];
@@ -307,6 +468,7 @@ async function initializeQuestions() {
             { type: 'fill-in-the-blanks', prompt: 'Electric current is the flow of _____.', correctAnswer: 'electrons', feedback: 'Electrons are negatively charged particles that carry current.' },
             { type: 'multiple-choice', prompt: 'Which is a source of electricity?', options: ["Resistor", "Battery", "Wire", "Switch"], correctAnswer: "Battery", feedback: 'Batteries store chemical energy as electrical energy.' }
         ]
+        // Add more templates as needed
     };
 
     for (const topic of topics) {
@@ -316,10 +478,10 @@ async function initializeQuestions() {
                 id: `${topic}-q${index + 1}`,
                 type: q.type,
                 prompt: q.prompt,
-                options: q.options ? q.options.map(opt => ({ value: opt })) : undefined,  // Ensure object format
+                options: q.options ? q.options.map(opt => ({ value: opt })) : undefined,
                 correctAnswer: q.correctAnswer,
                 feedback: q.feedback,
-                topic: topic.toLowerCase()  // Ensure lowercase
+                topic: topic.toLowerCase()
             })) : [];
 
             if (initialQuestions.length > 0) {
